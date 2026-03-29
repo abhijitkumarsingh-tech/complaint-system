@@ -1,113 +1,76 @@
-import os
-import pandas as pd
-from flask import Flask, render_template, request, redirect, url_for, session, send_file, flash
+from flask import Flask, render_template, request, redirect, url_for, session, send_file
 from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime
-from werkzeug.utils import secure_filename
+import pandas as pd
+import os
 
 app = Flask(__name__)
-# Secret key session save karne ke liye bahut zaroori hai
-app.secret_key = "abhi_secret_key_123"
+app.secret_key = 'abhijit_secret_key'
 
-# --- MYSQL CONFIG (Password: a@123) ---
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:a%40123@localhost/complaint_system'
+# --- TiDB Cloud Database Connection ---
+# Ismein SSL aur Pymysql dono set hain taki Cloud par error na aaye
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://3S7mDwgzz7CAvYE.root:FhCoEec4GGP3d35r@gateway01.ap-southeast-1.prod.aws.tidbcloud.com:4000/test?ssl_verify_cert=true&ssl_verify_identity=true'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['UPLOAD_FOLDER'] = 'static/uploads'
-
-if not os.path.exists(app.config['UPLOAD_FOLDER']):
-    os.makedirs(app.config['UPLOAD_FOLDER'])
 
 db = SQLAlchemy(app)
 
-# Database Model
+# --- Database Models ---
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    password = db.Column(db.String(120), nullable=False)
+
 class Complaint(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False)
-    email = db.Column(db.String(100), nullable=False)
-    subject = db.Column(db.String(200), nullable=False)
-    message = db.Column(db.Text, nullable=False)
-    image_file = db.Column(db.String(100), default='default.jpg')
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    text = db.Column(db.Text, nullable=False)
     status = db.Column(db.String(20), default='Pending')
-    date_posted = db.Column(db.DateTime, default=datetime.utcnow)
 
-# Routes
+# --- Routes ---
 @app.route('/')
 def index():
-    return render_template('index.html')
-
-@app.route('/add', methods=['POST'])
-def add_complaint():
-    file = request.files.get('file')
-    filename = 'default.jpg'
-    if file and file.filename != '':
-        filename = secure_filename(file.filename)
-        filename = f"{datetime.now().strftime('%Y%m%d%H%M%S')}_{filename}"
-        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-
-    new_c = Complaint(name=request.form['name'], email=request.form['email'], 
-                      subject=request.form['subject'], message=request.form['message'], image_file=filename)
-    db.session.add(new_c)
-    db.session.commit()
-    return render_template('index.html', tracking_id=new_c.id)
-
-# --- LOGIN LOGIC (Fixed) ---
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    if request.method == 'POST':
-        u = request.form.get('username')
-        p = request.form.get('password')
-        
-        # Username: admin | Password: admin7
-        if u == 'admin' and p == 'admin7':
-            session['logged_in'] = True
-            return redirect(url_for('admin'))
-        else:
-            flash("Galat Username ya Password!", "danger")
-            
     return render_template('login.html')
 
-@app.route('/admin')
-def admin():
-    if not session.get('logged_in'): 
-        return redirect(url_for('login'))
-    
-    t = Complaint.query.count() or 0
-    p = Complaint.query.filter_by(status='Pending').count() or 0
-    r = Complaint.query.filter_by(status='Resolved').count() or 0
-    complaints = Complaint.query.order_by(Complaint.date_posted.desc()).all()
-    
-    return render_template('admin.html', complaints=complaints, total=t, pending=p, resolved=r)
+@app.route('/login', methods=['POST'])
+def login():
+    username = request.form['username']
+    password = request.form['password']
+    user = User.query.filter_by(username=username, password=password).first()
+    if user:
+        session['user_id'] = user.id
+        return redirect(url_for('dashboard'))
+    return "Invalid Credentials"
 
-@app.route('/resolve/<int:id>')
-def resolve(id):
-    c = Complaint.query.get(id)
-    if c:
-        c.status = 'Resolved'
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        new_user = User(username=username, password=password)
+        db.session.add(new_user)
         db.session.commit()
-    return redirect(url_for('admin'))
+        return redirect(url_for('index'))
+    return render_template('register.html')
 
-@app.route('/delete/<int:id>')
-def delete(id):
-    c = Complaint.query.get(id)
-    if c:
-        db.session.delete(c)
-        db.session.commit()
-    return redirect(url_for('admin'))
+@app.route('/dashboard')
+def dashboard():
+    if 'user_id' not in session:
+        return redirect(url_for('index'))
+    complaints = Complaint.query.filter_by(user_id=session['user_id']).all()
+    return render_template('dashboard.html', complaints=complaints)
 
-@app.route('/export')
-def export():
-    c_all = Complaint.query.all()
-    data = [{"ID": c.id, "Name": c.name, "Status": c.status, "Subject": c.subject} for c in c_all]
-    df = pd.DataFrame(data)
-    df.to_excel("report.xlsx", index=False)
-    return send_file("report.xlsx", as_attachment=True)
+@app.route('/add_complaint', methods=['POST'])
+def add_complaint():
+    if 'user_id' not in session:
+        return redirect(url_for('index'))
+    text = request.form['complaint']
+    new_complaint = Complaint(user_id=session['user_id'], text=text)
+    db.session.add(new_complaint)
+    db.session.commit()
+    return redirect(url_for('dashboard'))
 
-@app.route('/logout')
-def logout():
-    session.pop('logged_in', None)
-    return redirect(url_for('login'))
-
+# --- Final Step: Auto-Create Tables ---
 if __name__ == '__main__':
     with app.app_context():
+        # Ye line TiDB mein apne aap tables bana degi
         db.create_all()
     app.run(debug=True)
