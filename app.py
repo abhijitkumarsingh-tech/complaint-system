@@ -27,6 +27,22 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://3AAj8oncwkM1Vqv.root:g9
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
+# --- HELPERS (Email Function) ---
+def send_email_async(to_email, subject, body):
+    try:
+        msg = MIMEMultipart()
+        msg['From'] = ADMIN_EMAIL
+        msg['To'] = to_email
+        msg['Subject'] = subject
+        msg.attach(MIMEText(body, 'plain'))
+        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server.starttls()
+        server.login(ADMIN_EMAIL, EMAIL_PASSWORD)
+        server.sendmail(ADMIN_EMAIL, to_email, msg.as_string())
+        server.quit()
+    except Exception as e:
+        print(f"Email Error: {e}")
+
 # --- FILTERS (For Time Tracking) ---
 @app.template_filter('time_ago')
 def time_ago_filter(dt):
@@ -104,24 +120,37 @@ def login():
 def add_complaint():
     if 'user_id' not in session: return redirect(url_for('index'))
     
+    name = request.form.get('name')
+    roll = request.form.get('roll_no', '').upper()
+    email = request.form.get('email')
+    phone = request.form.get('phone')
+    cat = request.form.get('category')
+    prio = request.form.get('priority')
+    msg = request.form.get('complaint')
+    
     file = request.files.get('photo')
     fname = secure_filename(file.filename) if file and file.filename else None
     if fname: file.save(os.path.join(app.config['UPLOAD_FOLDER'], fname))
 
     new_c = Complaint(
-        user_id=session['user_id'],
-        name=request.form.get('name'),
-        roll_no=request.form.get('roll_no', '').upper(),
-        email=request.form.get('email'),
-        phone=request.form.get('phone'),
-        category=request.form.get('category'),
-        priority=request.form.get('priority'),
-        text=request.form.get('complaint'),
+        user_id=session['user_id'], 
+        name=name, 
+        roll_no=roll, 
+        email=email, 
+        phone=phone, 
+        category=cat, 
+        priority=prio, 
+        text=msg, 
         image_file=fname
     )
     db.session.add(new_c)
     db.session.commit()
-    flash("Complaint Filed Successfully!", "success")
+
+    # Admin ko email bhejna (Threading use kiya hai taaki page slow na ho)
+    e_body = f"New Complaint from {name}\nRoll: {roll}\nPriority: {prio}\nMessage: {msg}"
+    threading.Thread(target=send_email_async, args=(ADMIN_EMAIL, f"New {prio} Complaint", e_body)).start()
+
+    flash("Complaint Submitted Successfully!", "success")
     return redirect(url_for('dashboard'))
 
 @app.route('/dashboard')
@@ -142,7 +171,11 @@ def update_status(id):
     comp = Complaint.query.get(id)
     if comp:
         if comp.status == 'Pending': comp.status, comp.progress = 'In Processing', 50
-        elif comp.status == 'In Processing': comp.status, comp.progress = 'Solved', 100
+        elif comp.status == 'In Processing': 
+            comp.status, comp.progress = 'Solved', 100
+            # Student ko email bhejna ki complaint solve ho gayi hai
+            s_body = f"Hi {comp.name}, your complaint regarding {comp.category} has been solved!"
+            threading.Thread(target=send_email_async, args=(comp.email, "Complaint Solved", s_body)).start()
         else: comp.status, comp.progress = 'Pending', 10
         db.session.commit()
     return redirect(url_for('admin_panel'))
@@ -160,7 +193,7 @@ def delete_complaint(id):
 def reset_database():
     db.drop_all()
     db.create_all()
-    return "Database Reset Successful! All new columns (Roll No, Time, Priority) are ready."
+    return "Database Reset Successful!"
 
 @app.route('/logout')
 def logout():
