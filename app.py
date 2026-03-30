@@ -3,9 +3,19 @@ from flask_sqlalchemy import SQLAlchemy
 from werkzeug.utils import secure_filename
 import os
 import sys
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 app = Flask(__name__)
 app.secret_key = 'abhijit_super_secret_master_key'
+
+# ==========================================
+# 🛑 ADMIN EMAIL SETTINGS
+# ==========================================
+ADMIN_EMAIL = "abhijitkumarsingh74@gmail.com"  # <-- BHAI YAHAN APNA EMAIL DALNA ZAROOR!
+EMAIL_PASSWORD = "tpclotfvlywdomkf"        # Tumhara App Password set ho gaya hai
+# ==========================================
 
 # --- Photo Upload Settings ---
 UPLOAD_FOLDER = 'uploads'
@@ -19,7 +29,25 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
-# --- Database Tables (Updated) ---
+# --- Email Helper Function ---
+def send_email(to_email, subject, body):
+    try:
+        msg = MIMEMultipart()
+        msg['From'] = ADMIN_EMAIL
+        msg['To'] = to_email
+        msg['Subject'] = subject
+        msg.attach(MIMEText(body, 'plain'))
+
+        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server.starttls()
+        server.login(ADMIN_EMAIL, EMAIL_PASSWORD)
+        server.sendmail(ADMIN_EMAIL, to_email, msg.as_string())
+        server.quit()
+        print(f"Email sent successfully to {to_email}", file=sys.stderr)
+    except Exception as e:
+        print("EMAIL ERROR: ", e, file=sys.stderr)
+
+# --- Database Tables ---
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(50), unique=True, nullable=False)
@@ -29,22 +57,21 @@ class User(db.Model):
 class Complaint(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    name = db.Column(db.String(100), nullable=False)       # Naya: Name
-    phone = db.Column(db.String(20), nullable=False)       # Naya: Phone Number
+    name = db.Column(db.String(100), nullable=False)
+    email = db.Column(db.String(120), nullable=False)
+    phone = db.Column(db.String(20), nullable=False)
     text = db.Column(db.Text, nullable=False)
-    image_file = db.Column(db.String(200), nullable=True)  # Naya: Photo ka naam
-    status = db.Column(db.String(20), default='Pending')   # Pending -> In Processing -> Solved
+    image_file = db.Column(db.String(200), nullable=True)
+    status = db.Column(db.String(20), default='Pending')
     user = db.relationship('User', backref=db.backref('complaints', lazy=True))
 
 with app.app_context():
     try:
         db.create_all()
-        print("✅ Database Connected!", file=sys.stderr)
     except Exception as e:
-        print("❌ DATABASE ERROR: ", e, file=sys.stderr)
+        pass
 
 # --- Routes ---
-
 @app.route('/')
 def index():
     return render_template('login.html')
@@ -59,10 +86,10 @@ def register():
             new_user = User(username=u, password=p, is_admin=admin_status)
             db.session.add(new_user)
             db.session.commit()
-            flash("Account created! Please login.", "success")
+            flash("Account successfully created! Please log in.", "success")
             return redirect(url_for('index'))
         except:
-            flash("Username exists! Try another.", "error")
+            flash("Username already exists. Please try another one.", "error")
             return redirect(url_for('register'))
     return render_template('register.html')
 
@@ -81,9 +108,9 @@ def login():
                 else:
                     return redirect(url_for('dashboard'))
             else:
-                flash("Invalid Credentials!", "error")
+                flash("Invalid Credentials! Please try again.", "error")
         except:
-            flash("Database Error!", "error")
+            flash("Database Connection Error. Please try again later.", "error")
     return render_template('login.html')
 
 @app.route('/dashboard')
@@ -99,10 +126,10 @@ def add_complaint():
         return redirect(url_for('index'))
     
     c_name = request.form.get('name')
+    c_email = request.form.get('email')
     c_phone = request.form.get('phone')
     c_text = request.form.get('complaint')
     
-    # Photo Upload Logic
     filename = None
     if 'photo' in request.files:
         file = request.files['photo']
@@ -110,14 +137,19 @@ def add_complaint():
             filename = secure_filename(file.filename)
             file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
 
-    if c_name and c_phone and c_text:
-        new_c = Complaint(user_id=session['user_id'], name=c_name, phone=c_phone, text=c_text, image_file=filename)
+    if c_name and c_email and c_phone and c_text:
+        new_c = Complaint(user_id=session['user_id'], name=c_name, email=c_email, phone=c_phone, text=c_text, image_file=filename)
         db.session.add(new_c)
         db.session.commit()
-        flash("Complaint submitted successfully!", "success")
+        
+        # 📧 ADMIN KO EMAIL BHEJO
+        subject = f"New Complaint Alert: #{new_c.id} from {c_name}"
+        body = f"Hello Admin,\n\nA new complaint has been registered in the system.\n\nStudent Name: {c_name}\nContact Email: {c_email}\nPhone Number: {c_phone}\n\nComplaint Details:\n{c_text}\n\nPlease log in to the Admin Dashboard to review the issue and take necessary action.\n\nBest regards,\nAutomated Complaint System"
+        send_email(ADMIN_EMAIL, subject, body)
+
+        flash("Complaint submitted successfully! You will be notified via email when it is resolved.", "success")
     return redirect(url_for('dashboard'))
 
-# Photo dekhne ke liye route
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
@@ -134,15 +166,20 @@ def update_status(id):
     if session.get('is_admin'):
         comp = Complaint.query.get(id)
         if comp:
-            # Pending -> In Processing -> Solved -> Pending (Cycle)
             if comp.status == 'Pending':
                 comp.status = 'In Processing'
             elif comp.status == 'In Processing':
                 comp.status = 'Solved'
+                
+                # 📧 STUDENT KO EMAIL BHEJO (Jab Solved ho)
+                subject = f"Status Update: Your Complaint #{comp.id} has been Resolved"
+                body = f"Hello {comp.name},\n\nGood news! Your recent complaint regarding:\n\n\"{comp.text}\"\n\nhas been reviewed and marked as SOLVED by the Administration.\n\nIf you have any further issues, please feel free to submit a new request.\n\nThank you,\nAdministration Team"
+                send_email(comp.email, subject, body)
+                
             else:
                 comp.status = 'Pending'
             db.session.commit()
-            flash(f"Status changed to {comp.status}!", "success")
+            flash(f"Status successfully updated to '{comp.status}'.", "success")
     return redirect(url_for('admin_panel'))
 
 @app.route('/delete_complaint/<int:id>', methods=['POST'])
@@ -152,6 +189,7 @@ def delete_complaint(id):
         if comp:
             db.session.delete(comp)
             db.session.commit()
+            flash("Complaint record deleted permanently.", "success")
     return redirect(url_for('admin_panel'))
 
 @app.route('/logout')
@@ -163,7 +201,7 @@ def logout():
 def reset_database():
     db.drop_all() 
     db.create_all() 
-    return "Database Reset Successful! 🎉 Naye features (Name, Phone, Photo) ke sath DB ready hai!"
+    return "Database Reset Successful! The system is now fully configured with Email Notifications."
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -20,14 +20,19 @@
         .btn-delete { background: #ff4757; color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%;}
         .complaint-img { max-width: 150px; border-radius: 8px; border: 2px solid #576574; cursor: pointer; transition: 0.3s;}
         .complaint-img:hover { transform: scale(1.1); }
+        .msg { padding: 15px; margin-bottom: 20px; border-radius: 8px; background-color: #0fb9b1; color: white; font-weight: bold; }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h2 style="margin: 0; color: white;">🛡️ Admin HQ (Command Center)</h2>
-            <a href="/logout" class="logout-btn">Logout</a>
+            <h2 style="margin: 0; color: white;">🛡️ Administration HQ</h2>
+            <a href="/logout" class="logout-btn">Log Out</a>
         </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}{% for category, message in messages %}<div class="msg">{{ message }}</div>{% endfor %}{% endif %}
+        {% endwith %}
 
         <div class="card">
             <h3>Live Complaints Feed</h3>
@@ -35,11 +40,11 @@
                 <thead>
                     <tr>
                         <th>ID</th>
-                        <th>User Info</th>
+                        <th>Student Info</th>
                         <th style="width: 35%;">Issue Description</th>
-                        <th>Evidence (Photo)</th>
-                        <th>Status</th>
-                        <th>Action</th>
+                        <th>Evidence</th>
+                        <th>Current Status</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -49,7 +54,7 @@
                         <td>
                             <b>{{ comp.name }}</b><br>
                             <span style="color: #a4b0be; font-size: 14px;">📞 {{ comp.phone }}</span><br>
-                            <span style="color: #a4b0be; font-size: 12px;">Acc: {{ comp.user.username }}</span>
+                            <span style="color: #a4b0be; font-size: 14px;">✉️ {{ comp.email }}</span>
                         </td>
                         <td>{{ comp.text }}</td>
                         <td>
@@ -58,7 +63,7 @@
                                     <img src="{{ url_for('uploaded_file', filename=comp.image_file) }}" class="complaint-img">
                                 </a>
                             {% else %}
-                                <span style="color: #747d8c;">No Photo</span>
+                                <span style="color: #747d8c;">No Photo Attached</span>
                             {% endif %}
                         </td>
                         <td>
@@ -68,15 +73,15 @@
                         </td>
                         <td>
                             <form action="/update_status/{{ comp.id }}" method="POST">
-                                <button type="submit" class="btn-status">Next Status 🔄</button>
+                                <button type="submit" class="btn-status">Update Status 🔄</button>
                             </form>
                             <form action="/delete_complaint/{{ comp.id }}" method="POST" style="margin-top: 5px;">
-                                <button type="submit" class="btn-delete">Trash 🗑️</button>
+                                <button type="submit" class="btn-delete">Delete 🗑️</button>
                             </form>
                         </td>
                     </tr>
                     {% else %}
-                    <tr><td colspan="6" style="text-align:center; padding: 30px; color: #a4b0be;">System is clear. No complaints! 🎉</td></tr>
+                    <tr><td colspan="6" style="text-align:center; padding: 30px; color: #a4b0be;">System is clear. No active complaints found. 🎉</td></tr>
                     {% endfor %}
                 </tbody>
             </table>

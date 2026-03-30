@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>User Dashboard</title>
+    <title>Student Dashboard</title>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; color: #333; }
         .container { max-width: 800px; margin: auto; }
@@ -24,8 +24,8 @@
 <body>
     <div class="container">
         <div class="header">
-            <h2 style="margin: 0;">Hi, {{ session.get('username', 'User') }} 👋</h2>
-            <a href="/logout" class="logout-btn">Logout</a>
+            <h2 style="margin: 0;">Welcome, {{ session.get('username', 'User') }} 👋</h2>
+            <a href="/logout" class="logout-btn">Log Out</a>
         </div>
 
         {% with messages = get_flashed_messages(with_categories=true) %}
@@ -33,12 +33,12 @@
         {% endwith %}
 
         <div class="card" style="border-top: 5px solid #1e90ff;">
-            <h3 style="margin-top: 0;">📝 Register New Complaint</h3>
+            <h3 style="margin-top: 0;">📝 Register a New Complaint</h3>
             <form action="/add_complaint" method="POST" enctype="multipart/form-data">
                 <div style="display: flex; gap: 15px;">
                     <div style="flex: 1;">
                         <label><b>Full Name</b></label>
-                        <input type="text" name="name" placeholder="Enter your name" required>
+                        <input type="text" name="name" placeholder="Enter your full name" required>
                     </div>
                     <div style="flex: 1;">
                         <label><b>Phone Number</b></label>
@@ -46,17 +46,20 @@
                     </div>
                 </div>
                 
+                <label><b>Email Address (For Notifications)</b></label>
+                <input type="email" name="email" placeholder="student@example.com" required>
+                
                 <label><b>Complaint Details</b></label>
                 <textarea name="complaint" rows="4" placeholder="Describe the issue in detail..." required></textarea>
                 
-                <label><b>Attach Photo (Optional)</b></label>
+                <label><b>Attach Evidence/Photo (Optional)</b></label>
                 <input type="file" name="photo" accept="image/*">
                 
                 <button type="submit">Submit Complaint 🚀</button>
             </form>
         </div>
 
-        <h3>⏳ My Recent Complaints</h3>
+        <h3>⏳ Your Recent Complaints</h3>
         {% for comp in complaints %}
             <div class="card">
                 <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
@@ -65,17 +68,17 @@
                         {{ comp.status }}
                     </span>
                 </div>
-                <h4 style="margin: 5px 0;">{{ comp.name }} (📞 {{ comp.phone }})</h4>
+                <h4 style="margin: 5px 0;">{{ comp.name }} (📞 {{ comp.phone }} | ✉️ {{ comp.email }})</h4>
                 <p style="margin-top: 5px; line-height: 1.5;">{{ comp.text }}</p>
                 
                 {% if comp.image_file %}
                     <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
-                    <b>Attached Image:</b><br>
-                    <img src="{{ url_for('uploaded_file', filename=comp.image_file) }}" class="complaint-img" alt="Complaint Proof">
+                    <b>Attached Evidence:</b><br>
+                    <img src="{{ url_for('uploaded_file', filename=comp.image_file) }}" class="complaint-img" alt="Evidence">
                 {% endif %}
             </div>
         {% else %}
-            <p style="text-align: center; color: #747d8c;">No complaints found. You're all good! ✨</p>
+            <p style="text-align: center; color: #747d8c;">No complaints found. Have a great day! ✨</p>
         {% endfor %}
     </div>
 </body>
