@@ -142,3 +142,9 @@ def logout():
 
 if __name__ == '__main__':
     app.run(debug=True)
+    # --- DATABASE RESET ROUTE (Sirf ek baar use karne ke liye) ---
+@app.route('/reset_database')
+def reset_database():
+    db.drop_all() # Purani galat tables delete karega
+    db.create_all() # Nayi perfect tables banayega (is_admin ke sath)
+    return "Database Reset Successful! 🎉 Ab nayi tables ban gayi hain. Wapas jaakar admin account banao!"
