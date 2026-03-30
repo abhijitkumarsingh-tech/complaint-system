@@ -13,8 +13,8 @@ app.secret_key = 'abhijit_super_secret_master_key'
 # ==========================================
 # 🛑 ADMIN EMAIL SETTINGS
 # ==========================================
-ADMIN_EMAIL = "abhijitkumarsingh74@gmail.com"  # <-- BHAI YAHAN APNA EMAIL DALNA ZAROOR!
-EMAIL_PASSWORD = "tpclotfvlywdomkf"        # Tumhara App Password set ho gaya hai
+ADMIN_EMAIL = "abhijitkumarsingh74@gmail.com"  
+EMAIL_PASSWORD = "tpclotfvlywdomkf"        
 # ==========================================
 
 # --- Photo Upload Settings ---
@@ -120,34 +120,50 @@ def dashboard():
     user_comps = Complaint.query.filter_by(user_id=session['user_id']).order_by(Complaint.id.desc()).all()
     return render_template('index.html', complaints=user_comps)
 
-@app.route('/add_complaint', methods=['POST'])
+# 🔥 YAHAN FIX KIYA HAI: GET aur POST dono allow kiye aur try-except lagaya
+@app.route('/add_complaint', methods=['GET', 'POST'])
 def add_complaint():
+    # Agar browser galti se direct page khol le toh dashboard par wapas bhejo
+    if request.method == 'GET':
+        return redirect(url_for('dashboard'))
+
     if 'user_id' not in session:
         return redirect(url_for('index'))
     
-    c_name = request.form.get('name')
-    c_email = request.form.get('email')
-    c_phone = request.form.get('phone')
-    c_text = request.form.get('complaint')
-    
-    filename = None
-    if 'photo' in request.files:
-        file = request.files['photo']
-        if file.filename != '':
-            filename = secure_filename(file.filename)
-            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-
-    if c_name and c_email and c_phone and c_text:
-        new_c = Complaint(user_id=session['user_id'], name=c_name, email=c_email, phone=c_phone, text=c_text, image_file=filename)
-        db.session.add(new_c)
-        db.session.commit()
+    try:
+        c_name = request.form.get('name')
+        c_email = request.form.get('email')
+        c_phone = request.form.get('phone')
+        c_text = request.form.get('complaint')
         
-        # 📧 ADMIN KO EMAIL BHEJO
-        subject = f"New Complaint Alert: #{new_c.id} from {c_name}"
-        body = f"Hello Admin,\n\nA new complaint has been registered in the system.\n\nStudent Name: {c_name}\nContact Email: {c_email}\nPhone Number: {c_phone}\n\nComplaint Details:\n{c_text}\n\nPlease log in to the Admin Dashboard to review the issue and take necessary action.\n\nBest regards,\nAutomated Complaint System"
-        send_email(ADMIN_EMAIL, subject, body)
+        filename = None
+        if 'photo' in request.files:
+            file = request.files['photo']
+            if file.filename != '':
+                filename = secure_filename(file.filename)
+                # Ensure folder exists on the cloud server
+                if not os.path.exists(app.config['UPLOAD_FOLDER']):
+                    os.makedirs(app.config['UPLOAD_FOLDER'])
+                file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
 
-        flash("Complaint submitted successfully! You will be notified via email when it is resolved.", "success")
+        if c_name and c_email and c_phone and c_text:
+            new_c = Complaint(user_id=session['user_id'], name=c_name, email=c_email, phone=c_phone, text=c_text, image_file=filename)
+            db.session.add(new_c)
+            db.session.commit()
+            
+            # 📧 ADMIN KO EMAIL BHEJO
+            subject = f"New Complaint Alert: #{new_c.id} from {c_name}"
+            body = f"Hello Admin,\n\nA new complaint has been registered in the system.\n\nStudent Name: {c_name}\nContact Email: {c_email}\nPhone Number: {c_phone}\n\nComplaint Details:\n{c_text}\n\nPlease log in to the Admin Dashboard to review the issue and take necessary action.\n\nBest regards,\nAutomated Complaint System"
+            send_email(ADMIN_EMAIL, subject, body)
+
+            flash("Complaint submitted successfully! You will be notified via email when it is resolved.", "success")
+        else:
+            flash("All fields are required!", "error")
+
+    except Exception as e:
+        print("CRITICAL ERROR IN ADD_COMPLAINT: ", e, file=sys.stderr)
+        flash("Server pe thodi delay hui, par error handle ho gaya! Phir se try karein.", "error")
+
     return redirect(url_for('dashboard'))
 
 @app.route('/uploads/<filename>')
