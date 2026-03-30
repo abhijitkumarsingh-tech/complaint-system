@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash, send_from_directory
+from flask import Flask, render_template, request, redirect, url_for, session, flash, send_from_directory, make_response
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.utils import secure_filename
 import os
@@ -6,7 +6,9 @@ import sys
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-import threading  # 🔥 NAYA TOOL: Background mein email bhejne ke liye
+import threading
+import csv  # 🔥 NAYA: Excel/CSV Report ke liye
+from io import StringIO
 
 app = Flask(__name__)
 app.secret_key = 'abhijit_super_secret_master_key'
@@ -18,19 +20,16 @@ ADMIN_EMAIL = "abhijitkumarsingh74@gmail.com"
 EMAIL_PASSWORD = "tpclotfvlywdomkf"        
 # ==========================================
 
-# --- Photo Upload Settings ---
 UPLOAD_FOLDER = 'uploads'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 
-# --- TiDB Cloud Connection ---
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://3AAj8oncwkM1Vqv.root:g9N0PtQJp9QVlVka@gateway01.ap-southeast-1.prod.aws.tidbcloud.com:4000/test?ssl_verify_cert=true&ssl_verify_identity=true'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
-# --- Email Helper Function ---
 def send_email(to_email, subject, body):
     try:
         msg = MIMEMultipart()
@@ -38,13 +37,11 @@ def send_email(to_email, subject, body):
         msg['To'] = to_email
         msg['Subject'] = subject
         msg.attach(MIMEText(body, 'plain'))
-
         server = smtplib.SMTP('smtp.gmail.com', 587)
         server.starttls()
         server.login(ADMIN_EMAIL, EMAIL_PASSWORD)
         server.sendmail(ADMIN_EMAIL, to_email, msg.as_string())
         server.quit()
-        print(f"Email sent successfully to {to_email}", file=sys.stderr)
     except Exception as e:
         print("EMAIL ERROR: ", e, file=sys.stderr)
 
@@ -61,6 +58,8 @@ class Complaint(db.Model):
     name = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(120), nullable=False)
     phone = db.Column(db.String(20), nullable=False)
+    category = db.Column(db.String(50), nullable=False, default='General') # 🔥 NAYA: Category
+    priority = db.Column(db.String(20), nullable=False, default='Medium')  # 🔥 NAYA: Priority
     text = db.Column(db.Text, nullable=False)
     image_file = db.Column(db.String(200), nullable=True)
     status = db.Column(db.String(20), default='Pending')
@@ -133,6 +132,8 @@ def add_complaint():
         c_name = request.form.get('name')
         c_email = request.form.get('email')
         c_phone = request.form.get('phone')
+        c_category = request.form.get('category') # 🔥 Get Category
+        c_priority = request.form.get('priority') # 🔥 Get Priority
         c_text = request.form.get('complaint')
         
         filename = None
@@ -145,15 +146,12 @@ def add_complaint():
                 file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
 
         if c_name and c_email and c_phone and c_text:
-            new_c = Complaint(user_id=session['user_id'], name=c_name, email=c_email, phone=c_phone, text=c_text, image_file=filename)
+            new_c = Complaint(user_id=session['user_id'], name=c_name, email=c_email, phone=c_phone, category=c_category, priority=c_priority, text=c_text, image_file=filename)
             db.session.add(new_c)
             db.session.commit()
             
-            # 📧 ADMIN KO EMAIL BHEJO (BACKGROUND MEIN) 🔥
-            subject = f"New Complaint Alert: #{new_c.id} from {c_name}"
-            body = f"Hello Admin,\n\nA new complaint has been registered in the system.\n\nStudent Name: {c_name}\nContact Email: {c_email}\nPhone Number: {c_phone}\n\nComplaint Details:\n{c_text}\n\nPlease log in to the Admin Dashboard to review the issue and take necessary action.\n\nBest regards,\nAutomated Complaint System"
-            
-            # Threading use karke email bhejne se website atakegi nahi!
+            subject = f"[{c_priority} Priority] New Complaint: {c_category}"
+            body = f"Hello Admin,\n\nA new complaint has been registered.\n\nCategory: {c_category}\nPriority: {c_priority}\nStudent: {c_name}\n\nDetails:\n{c_text}"
             threading.Thread(target=send_email, args=(ADMIN_EMAIL, subject, body)).start()
 
             flash("Complaint submitted successfully!", "success")
@@ -165,6 +163,28 @@ def add_complaint():
         flash("Technical Error. Please try again.", "error")
 
     return redirect(url_for('dashboard'))
+
+# 🔥 NAYA ROUTE: Download Excel/CSV Report
+@app.route('/download_report')
+def download_report():
+    if 'user_id' not in session or not session.get('is_admin'):
+        return redirect(url_for('index'))
+    
+    comps = Complaint.query.all()
+    si = StringIO()
+    cw = csv.writer(si)
+    
+    # Excel ke Headers (Pehli Line)
+    cw.writerow(['Complaint ID', 'Student Name', 'Phone', 'Email', 'Department', 'Priority Level', 'Issue Description', 'Current Status'])
+    
+    # Database ka data Excel mein dalna
+    for c in comps:
+        cw.writerow([c.id, c.name, c.phone, c.email, c.category, c.priority, c.text, c.status])
+    
+    output = make_response(si.getvalue())
+    output.headers["Content-Disposition"] = "attachment; filename=complaint_report.csv"
+    output.headers["Content-type"] = "text/csv"
+    return output
 
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):
@@ -186,17 +206,13 @@ def update_status(id):
                 comp.status = 'In Processing'
             elif comp.status == 'In Processing':
                 comp.status = 'Solved'
-                
-                # 📧 STUDENT KO EMAIL BHEJO (BACKGROUND MEIN) 🔥
-                subject = f"Status Update: Your Complaint #{comp.id} has been Resolved"
-                body = f"Hello {comp.name},\n\nGood news! Your recent complaint regarding:\n\n\"{comp.text}\"\n\nhas been reviewed and marked as SOLVED by the Administration.\n\nIf you have any further issues, please feel free to submit a new request.\n\nThank you,\nAdministration Team"
-                
+                subject = f"Status Update: Complaint #{comp.id} Solved"
+                body = f"Hello {comp.name},\n\nYour complaint regarding '{comp.category}' has been SOLVED."
                 threading.Thread(target=send_email, args=(comp.email, subject, body)).start()
-                
             else:
                 comp.status = 'Pending'
             db.session.commit()
-            flash(f"Status successfully updated to '{comp.status}'.", "success")
+            flash(f"Status updated to '{comp.status}'.", "success")
     return redirect(url_for('admin_panel'))
 
 @app.route('/delete_complaint/<int:id>', methods=['POST'])
@@ -218,7 +234,7 @@ def logout():
 def reset_database():
     db.drop_all() 
     db.create_all() 
-    return "Database Reset Successful! The system is now fully configured with Email Notifications."
+    return "Database Reset Successful! The system is now fully configured with Categories, Priorities and Export features!"
 
 if __name__ == '__main__':
     app.run(debug=True)

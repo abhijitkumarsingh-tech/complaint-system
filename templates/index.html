@@ -8,18 +8,13 @@
         .container { max-width: 800px; margin: auto; }
         .header { display: flex; justify-content: space-between; align-items: center; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; }
         .logout-btn { background: #ff4757; color: white; padding: 10px 20px; text-decoration: none; border-radius: 8px; font-weight: bold; transition: 0.3s; }
-        .logout-btn:hover { background: #ff6b81; }
         .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; }
-        input, textarea, input[type="file"] { width: 100%; padding: 12px; margin-top: 8px; margin-bottom: 15px; border: 1px solid #ced4da; border-radius: 8px; box-sizing: border-box; font-family: inherit; }
+        input, textarea, input[type="file"], select { width: 100%; padding: 12px; margin-top: 8px; margin-bottom: 15px; border: 1px solid #ced4da; border-radius: 8px; box-sizing: border-box; font-family: inherit; }
         button { background: #2ed573; color: white; padding: 12px 25px; border: none; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer; width: 100%; transition: 0.3s; }
-        button:hover { background: #26de81; }
         .badge { padding: 5px 12px; border-radius: 20px; font-size: 13px; font-weight: bold; color: white; }
-        .bg-pending { background: #ffa502; }
-        .bg-processing { background: #1e90ff; }
-        .bg-solved { background: #2ed573; }
+        .bg-pending { background: #ffa502; } .bg-processing { background: #1e90ff; } .bg-solved { background: #2ed573; }
+        .p-high { color: #ff4757; font-weight: bold;} .p-med { color: #ffa502; font-weight: bold;} .p-low { color: #2ed573; font-weight: bold;}
         .complaint-img { max-width: 100%; height: auto; border-radius: 8px; margin-top: 10px; max-height: 200px; object-fit: cover; }
-        
-        /* 🔥 Success aur Error Messages ko alag rang diya */
         .msg { padding: 15px; margin-bottom: 20px; border-radius: 8px; font-weight: bold; }
         .msg.success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
         .msg.error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
@@ -33,32 +28,43 @@
         </div>
 
         {% with messages = get_flashed_messages(with_categories=true) %}
-          {% if messages %}
-            {% for category, message in messages %}
-              <div class="msg {{ category }}">{{ message }}</div>
-            {% endfor %}
-          {% endif %}
+          {% if messages %}{% for category, message in messages %}<div class="msg {{ category }}">{{ message }}</div>{% endfor %}{% endif %}
         {% endwith %}
 
         <div class="card" style="border-top: 5px solid #1e90ff;">
             <h3 style="margin-top: 0;">📝 Register a New Complaint</h3>
             <form action="/add_complaint" method="POST" enctype="multipart/form-data">
                 <div style="display: flex; gap: 15px;">
-                    <div style="flex: 1;">
-                        <label><b>Full Name</b></label>
-                        <input type="text" name="name" placeholder="Enter your full name" required>
-                    </div>
-                    <div style="flex: 1;">
-                        <label><b>Phone Number</b></label>
-                        <input type="number" name="phone" placeholder="Enter mobile number" required>
-                    </div>
+                    <div style="flex: 1;"><label><b>Full Name</b></label><input type="text" name="name" required></div>
+                    <div style="flex: 1;"><label><b>Phone Number</b></label><input type="number" name="phone" required></div>
                 </div>
                 
-                <label><b>Email Address (For Notifications)</b></label>
-                <input type="email" name="email" placeholder="student@example.com" required>
+                <label><b>Email Address</b></label>
+                <input type="email" name="email" required>
                 
+                <div style="display: flex; gap: 15px;">
+                    <div style="flex: 1;">
+                        <label><b>Department / Category</b></label>
+                        <select name="category">
+                            <option value="IT & Wi-Fi">IT & Wi-Fi</option>
+                            <option value="Hostel & Accommodation">Hostel & Accommodation</option>
+                            <option value="Electricity & Plumbing">Electricity & Plumbing</option>
+                            <option value="Library & Academics">Library & Academics</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div style="flex: 1;">
+                        <label><b>Priority Level</b></label>
+                        <select name="priority">
+                            <option value="Low">Low (General Issue)</option>
+                            <option value="Medium" selected>Medium (Needs Attention)</option>
+                            <option value="High">High (Urgent!)</option>
+                        </select>
+                    </div>
+                </div>
+
                 <label><b>Complaint Details</b></label>
-                <textarea name="complaint" rows="4" placeholder="Describe the issue in detail..." required></textarea>
+                <textarea name="complaint" rows="4" required></textarea>
                 
                 <label><b>Attach Evidence/Photo (Optional)</b></label>
                 <input type="file" name="photo" accept="image/*">
@@ -71,22 +77,15 @@
         {% for comp in complaints %}
             <div class="card">
                 <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-                    <span style="color: #747d8c; font-size: 14px;">Complaint ID: #{{ comp.id }}</span>
-                    <span class="badge {% if comp.status == 'Pending' %}bg-pending{% elif comp.status == 'In Processing' %}bg-processing{% else %}bg-solved{% endif %}">
-                        {{ comp.status }}
-                    </span>
+                    <span style="color: #747d8c; font-size: 14px;">#{{ comp.id }} | 📁 {{ comp.category }} | 🚨 Priority: <span class="{% if comp.priority == 'High' %}p-high{% elif comp.priority == 'Medium' %}p-med{% else %}p-low{% endif %}">{{ comp.priority }}</span></span>
+                    <span class="badge {% if comp.status == 'Pending' %}bg-pending{% elif comp.status == 'In Processing' %}bg-processing{% else %}bg-solved{% endif %}">{{ comp.status }}</span>
                 </div>
-                <h4 style="margin: 5px 0;">{{ comp.name }} (📞 {{ comp.phone }} | ✉️ {{ comp.email }})</h4>
+                <h4 style="margin: 5px 0;">{{ comp.name }}</h4>
                 <p style="margin-top: 5px; line-height: 1.5;">{{ comp.text }}</p>
-                
-                {% if comp.image_file %}
-                    <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
-                    <b>Attached Evidence:</b><br>
-                    <img src="{{ url_for('uploaded_file', filename=comp.image_file) }}" class="complaint-img" alt="Evidence">
-                {% endif %}
+                {% if comp.image_file %}<img src="{{ url_for('uploaded_file', filename=comp.image_file) }}" class="complaint-img">{% endif %}
             </div>
         {% else %}
-            <p style="text-align: center; color: #747d8c;">No complaints found. Have a great day! ✨</p>
+            <p style="text-align: center; color: #747d8c;">No complaints found. ✨</p>
         {% endfor %}
     </div>
 </body>
