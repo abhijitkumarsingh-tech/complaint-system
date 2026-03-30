@@ -14,6 +14,7 @@ app = Flask(__name__)
 app.secret_key = 'abhijit_super_secret_master_key'
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
 
+# --- CONFIGURATION ---
 ADMIN_EMAIL = "abhijitkumarsingh74@gmail.com"  
 EMAIL_PASSWORD = "tpclotfvlywdomkf"        
 
@@ -22,14 +23,31 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 
+# TiDB / MySQL Connection
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://3AAj8oncwkM1Vqv.root:g9N0PtQJp9QVlVka@gateway01.ap-southeast-1.prod.aws.tidbcloud.com:4000/test?ssl_verify_cert=true&ssl_verify_identity=true'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
-# Custom Time Filter
+# --- HELPERS ---
+def send_email_async(to_email, subject, body):
+    try:
+        msg = MIMEMultipart()
+        msg['From'] = ADMIN_EMAIL
+        msg['To'] = to_email
+        msg['Subject'] = subject
+        msg.attach(MIMEText(body, 'plain'))
+        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server.starttls()
+        server.login(ADMIN_EMAIL, EMAIL_PASSWORD)
+        server.sendmail(ADMIN_EMAIL, to_email, msg.as_string())
+        server.quit()
+    except Exception as e:
+        print(f"Email Error: {e}")
+
 @app.template_filter('time_ago')
 def time_ago_filter(dt):
+    if not dt: return ""
     diff = datetime.utcnow() - dt
     if diff.days > 0:
         return f"{diff.days} days ago"
@@ -37,9 +55,10 @@ def time_ago_filter(dt):
     if hours > 0:
         return f"{hours} hours ago"
     minutes = (diff.seconds % 3600) // 60
+    if minutes == 0: return "just now"
     return f"{minutes} mins ago"
 
-# Database Models
+# --- MODELS ---
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(50), unique=True, nullable=False)
@@ -54,7 +73,7 @@ class Complaint(db.Model):
     email = db.Column(db.String(120), nullable=False)
     phone = db.Column(db.String(20), nullable=False)
     category = db.Column(db.String(50), nullable=False)
-    priority = db.Column(db.String(20), nullable=False)
+    priority = db.Column(db.String(20), nullable=False, default='Medium')
     text = db.Column(db.Text, nullable=False)
     image_file = db.Column(db.String(200), nullable=True)
     status = db.Column(db.String(20), default='Pending')
@@ -65,7 +84,7 @@ class Complaint(db.Model):
 with app.app_context():
     db.create_all()
 
-# Routes
+# --- ROUTES ---
 @app.route('/')
 def index():
     return render_template('login.html')
@@ -76,11 +95,9 @@ def register():
         u = request.form.get('username')
         p = request.form.get('password')
         role = request.form.get('role') 
-        
         if len(p) < 3:
             flash("Password must be at least 3 characters.", "error")
             return redirect(url_for('register'))
-
         admin_status = True if role == 'Admin' else False
         try:
             new_user = User(username=u, password=p, is_admin=admin_status)
@@ -103,8 +120,7 @@ def login():
             if (role == 'Admin' and not user.is_admin) or (role == 'Student' and user.is_admin):
                 flash(f"Access Denied: You are not a {role}.", "error")
                 return redirect(url_for('index'))
-            
-            session.permanent = True  
+            session.permanent = True 
             session['user_id'] = user.id
             session['username'] = user.username
             session['is_admin'] = user.is_admin
@@ -124,11 +140,11 @@ def add_complaint():
     if 'user_id' not in session: return redirect(url_for('index'))
     
     name = request.form.get('name')
-    roll = request.form.get('roll_no').upper() 
+    roll = request.form.get('roll_no', '').upper() 
     email = request.form.get('email')
     phone = request.form.get('phone')
     cat = request.form.get('category')
-    prio = request.form.get('priority')
+    prio = request.form.get('priority', 'Medium')
     msg = request.form.get('complaint')
     
     file = request.files.get('photo')
@@ -138,6 +154,11 @@ def add_complaint():
     new_c = Complaint(user_id=session['user_id'], name=name, roll_no=roll, email=email, phone=phone, category=cat, priority=prio, text=msg, image_file=filename)
     db.session.add(new_c)
     db.session.commit()
+
+    # Admin Email Notification
+    email_body = f"New Complaint from {name} ({roll})\nCategory: {cat}\nIssue: {msg}"
+    threading.Thread(target=send_email_async, args=(ADMIN_EMAIL, f"New Complaint: {cat}", email_body)).start()
+
     flash("Complaint Filed Successfully!", "success")
     return redirect(url_for('dashboard'))
 
@@ -158,6 +179,9 @@ def update_status(id):
         elif comp.status == 'In Processing':
             comp.status = 'Solved'
             comp.progress = 100
+            # Student Email Notification
+            email_body = f"Hello {comp.name}, your complaint regarding {comp.category} has been SOLVED."
+            threading.Thread(target=send_email_async, args=(comp.email, "Complaint Solved!", email_body)).start()
         else:
             comp.status = 'Pending'
             comp.progress = 10

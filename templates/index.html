@@ -2,20 +2,23 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Student Dashboard</title>
+    <title>Campus Student Portal</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; color: #333; }
-        .container { max-width: 800px; margin: auto; }
-        .header { display: flex; justify-content: space-between; align-items: center; background: white; padding: 20px; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 20px; border-bottom: 3px solid #0056b3; }
-        .logout-btn { background: #dc3545; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px; font-weight: 600; font-size: 14px; }
-        .card { background: white; padding: 25px; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 20px; }
-        label { font-weight: 600; color: #495057; font-size: 13px; text-transform: uppercase; }
-        input, textarea, input[type="file"], select { width: 100%; padding: 10px; margin-top: 6px; margin-bottom: 15px; border: 1px solid #ced4da; border-radius: 4px; box-sizing: border-box; font-family: inherit; }
-        button { background: #0056b3; color: white; padding: 12px 25px; border: none; border-radius: 4px; font-weight: bold; font-size: 15px; cursor: pointer; width: 100%; }
-        .badge { padding: 4px 10px; border-radius: 4px; font-size: 12px; font-weight: bold; color: white; text-transform: uppercase; }
-        .bg-pending { background: #f0ad4e; } .bg-processing { background: #17a2b8; } .bg-solved { background: #28a745; }
-        .p-high { color: #dc3545; font-weight: bold;} .p-med { color: #f0ad4e; font-weight: bold;} .p-low { color: #28a745; font-weight: bold;}
-        .msg { padding: 15px; margin-bottom: 20px; border-radius: 4px; font-weight: bold; font-size: 14px; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: #f8f9fa; margin: 0; padding: 20px; }
+        .container { max-width: 900px; margin: auto; }
+        .header { background: #003366; color: white; padding: 20px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-bottom: 25px; }
+        .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.05); margin-bottom: 20px; border: 1px solid #e1e4e8; }
+        label { font-weight: 600; font-size: 13px; color: #555; text-transform: uppercase; margin-bottom: 8px; display: block;}
+        input, select, textarea { width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 6px; margin-bottom: 20px; box-sizing: border-box; }
+        button { background: #0056b3; color: white; padding: 14px; border: none; border-radius: 6px; font-weight: bold; width: 100%; cursor: pointer; transition: 0.3s; }
+        button:hover { background: #003d82; }
+        
+        .progress-container { background: #eee; border-radius: 10px; height: 10px; margin: 10px 0; overflow: hidden; }
+        .progress-bar { height: 100%; background: #28a745; transition: width 0.5s; }
+        .time-tag { font-size: 12px; color: #888; font-style: italic; }
+        .status-badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; color: white; float: right; text-transform: uppercase;}
+        
+        .msg { padding: 15px; margin-bottom: 20px; border-radius: 6px; font-weight: bold; font-size: 14px; text-align: center;}
         .msg.success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
         .msg.error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
     </style>
@@ -23,8 +26,8 @@
 <body>
     <div class="container">
         <div class="header">
-            <h2 style="margin: 0;">Student Portal | {{ session.get('username', 'User') }}</h2>
-            <a href="/logout" class="logout-btn">Logout</a>
+            <h2 style="margin: 0;">Campus Complaint Portal</h2>
+            <a href="/logout" style="color:white; text-decoration:none; font-weight:bold;">Logout</a>
         </div>
 
         {% with messages = get_flashed_messages(with_categories=true) %}
@@ -32,43 +35,44 @@
         {% endwith %}
 
         <div class="card">
-            <h3 style="margin-top: 0; color: #0056b3;">Submit New Complaint</h3>
+            <h3 style="margin-top: 0; color: #003366;">Submit New Complaint</h3>
             <form action="/add_complaint" method="POST" enctype="multipart/form-data">
-                <div style="display: flex; gap: 15px;">
-                    <div style="flex: 1;"><label>Full Name</label><input type="text" name="name" required></div>
+                <div style="display: flex; gap: 20px;">
                     <div style="flex: 1;">
-                        <label>Phone Number</label>
-                        <input type="text" name="phone" pattern="[0-9]{10}" title="Please enter a valid 10-digit mobile number" required>
+                        <label>Full Name</label>
+                        <input type="text" name="name" placeholder="Enter your name" required>
+                    </div>
+                    
+                    <div style="flex: 1;">
+                        <label>Roll Number (YYYY/BRANCH/NO)</label>
+                        <input type="text" name="roll_no" placeholder="e.g. 2023/CSE/37" 
+                               pattern="[0-9]{4}/[A-Za-z]{2,5}/[0-9]{1,4}" 
+                               title="Format should be like 2023/CSE/37" required>
                     </div>
                 </div>
-                
-                <label>Email Address</label>
-                <input type="email" name="email" required>
-                
-                <div style="display: flex; gap: 15px;">
+
+                <div style="display: flex; gap: 20px;">
                     <div style="flex: 1;">
-                        <label>Department / Category</label>
-                        <select name="category">
-                            <option value="IT & Wi-Fi">IT & Wi-Fi</option>
-                            <option value="Hostel & Accommodation">Hostel & Accommodation</option>
-                            <option value="Electricity & Plumbing">Electricity & Plumbing</option>
-                            <option value="Library & Academics">Library & Academics</option>
-                            <option value="Other">Other</option>
-                        </select>
+                        <label>Phone Number</label>
+                        <input type="text" name="phone" pattern="[0-9]{10}" placeholder="10 digit number" required>
                     </div>
                     <div style="flex: 1;">
-                        <label>Priority Level</label>
-                        <select name="priority">
-                            <option value="Low">Low (General)</option>
-                            <option value="Medium" selected>Medium (Standard)</option>
-                            <option value="High">High (Urgent)</option>
+                        <label>Category</label>
+                        <select name="category">
+                            <option value="IT & Wi-Fi">IT & Wi-Fi</option>
+                            <option value="Hostel">Hostel</option>
+                            <option value="Academics">Academics</option>
+                            <option value="Other">Other</option>
                         </select>
                     </div>
                 </div>
 
                 <label>Complaint Details</label>
-                <textarea name="complaint" rows="4" required></textarea>
+                <textarea name="complaint" rows="4" placeholder="Describe your issue here..." required></textarea>
                 
+                <input type="hidden" name="email" value="student@college.edu"> 
+                <input type="hidden" name="priority" value="Medium">
+
                 <label>Attach Evidence (Optional)</label>
                 <input type="file" name="photo" accept="image/*">
                 
@@ -76,17 +80,22 @@
             </form>
         </div>
 
-        <h3 style="color: #495057;">Your Complaint History</h3>
+        <h3 style="color: #555;">Complaint History</h3>
         {% for comp in complaints %}
-            <div class="card" style="padding: 15px;">
-                <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 10px;">
-                    <span style="color: #6c757d; font-size: 13px;">ID: #{{ comp.id }} | Dept: {{ comp.category }} | Priority: <span class="{% if comp.priority == 'High' %}p-high{% elif comp.priority == 'Medium' %}p-med{% else %}p-low{% endif %}">{{ comp.priority }}</span></span>
-                    <span class="badge {% if comp.status == 'Pending' %}bg-pending{% elif comp.status == 'In Processing' %}bg-processing{% else %}bg-solved{% endif %}">{{ comp.status }}</span>
-                </div>
-                <p style="margin: 0; line-height: 1.5; font-size: 14px;">{{ comp.text }}</p>
+        <div class="card" style="padding: 20px;">
+            <span class="status-badge" style="background: {% if comp.status == 'Solved' %}#28a745{% elif comp.status == 'In Processing' %}#17a2b8{% else %}#f0ad4e{% endif %};">
+                {{ comp.status }}
+            </span>
+            <strong>#{{ comp.id }} - {{ comp.category }}</strong>
+            <p style="margin: 10px 0; color: #444;">{{ comp.text }}</p>
+            
+            <div class="progress-container">
+                <div class="progress-bar" style="width: {{ comp.progress }}%;"></div>
             </div>
+            <span class="time-tag">Submitted {{ comp.created_at|time_ago }}</span>
+        </div>
         {% else %}
-            <p style="text-align: center; color: #6c757d; padding: 20px;">No records found.</p>
+        <p style="text-align: center; color: #888; padding: 20px;">No history found.</p>
         {% endfor %}
     </div>
 </body>

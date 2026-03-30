@@ -2,91 +2,75 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Admin Command Center</title>
+    <title>Admin Dashboard</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f9; color: #333; margin: 0; padding: 20px; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; }
         .container { max-width: 1200px; margin: auto; }
-        .header { display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 20px; border-radius: 4px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border-left: 5px solid #343a40; }
-        .logout-btn { background: #dc3545; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px; font-weight: 600; font-size: 14px;}
-        .export-btn { background: #28a745; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px; font-weight: 600; font-size: 14px; margin-right: 15px; }
-        .card { background: #fff; padding: 25px; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
-        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #dee2e6; vertical-align: top; }
-        th { background-color: #343a40; color: white; text-transform: uppercase; font-size: 12px; letter-spacing: 0.5px; }
-        
-        .row-solved td { opacity: 0.5; background-color: #f8f9fa; }
-        .row-solved:hover td { opacity: 1; } 
-
-        .badge { padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: bold; display: inline-block; color: white; text-transform: uppercase;}
-        .bg-pending { background: #f0ad4e; } .bg-processing { background: #17a2b8; } .bg-solved { background: #28a745; }
-        .text-High { color: #dc3545; font-weight: bold; } .text-Medium { color: #f0ad4e; font-weight: bold;} .text-Low { color: #28a745; font-weight: bold;}
-        
-        .btn-status { background: #17a2b8; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; width: 100%; margin-bottom: 5px; font-size: 12px; font-weight: bold;}
-        .btn-delete { background: #dc3545; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; width: 100%; font-size: 12px; font-weight: bold;}
-        .msg { padding: 15px; margin-bottom: 20px; border-radius: 4px; background-color: #17a2b8; color: white; font-weight: bold; font-size: 14px;}
+        .header { background: white; padding: 20px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px; border-left: 6px solid #003366; }
+        .card { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); overflow-x: auto;}
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        th, td { padding: 15px; text-align: left; border-bottom: 1px solid #dee2e6; vertical-align: top;}
+        th { background: #343a40; color: white; text-transform: uppercase; font-size: 12px; }
+        .btn { padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px; width: 100%; margin-bottom: 5px; text-align: center; display: block; text-decoration: none;}
+        .btn-update { background: #0056b3; color: white; }
+        .btn-delete { background: #dc3545; color: white; }
+        .time-tag { font-size: 12px; color: #888; font-style: italic; }
+        .progress-bg { width: 100%; background:#eee; height:8px; border-radius:4px; margin-bottom: 5px; }
+        .progress-fill { background:#28a745; height:100%; border-radius:4px; }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h2 style="margin: 0; color: #343a40;">Administration Dashboard</h2>
+            <h2 style="margin:0;">Administration HQ</h2>
             <div>
-                <a href="/download_report" class="export-btn">Export Data (CSV)</a>
-                <a href="/logout" class="logout-btn">Logout</a>
+                <a href="/download_report" style="background:#28a745; color:white; padding:10px 15px; border-radius:5px; text-decoration:none; margin-right:10px; font-weight:bold; font-size: 14px;">Export Report</a>
+                <a href="/logout" style="color:#dc3545; text-decoration:none; font-weight:bold;">Logout</a>
             </div>
         </div>
 
-        {% with messages = get_flashed_messages(with_categories=true) %}
-          {% if messages %}{% for category, message in messages %}<div class="msg">{{ message }}</div>{% endfor %}{% endif %}
-        {% endwith %}
-
         <div class="card">
-            <h3 style="margin-top:0; color:#495057;">Complaints Log</h3>
+            <h3 style="margin-top:0;">Complaint Tracking Log</h3>
             <table>
                 <thead>
                     <tr>
-                        <th>ID</th>
-                        <th>Student Information</th>
-                        <th style="width: 35%;">Issue Details</th>
-                        <th>Evidence</th>
-                        <th>Status</th>
-                        <th>Actions</th>
+                        <th>ID & Time</th>
+                        <th>Student Details</th>
+                        <th style="width: 30%;">Complaint</th>
+                        <th>Status & Progress</th>
+                        <th>Action</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for comp in complaints %}
-                    <tr class="{% if comp.status == 'Solved' %}row-solved{% endif %}">
-                        <td><b>#{{ comp.id }}</b></td>
+                    <tr {% if comp.status == 'Solved' %}style="opacity:0.6; background-color: #f8f9fa;"{% endif %}>
+                        <td>
+                            <b>#{{ comp.id }}</b><br>
+                            <span class="time-tag">{{ comp.created_at|time_ago }}</span>
+                        </td>
                         <td>
                             <b>{{ comp.name }}</b><br>
-                            <span style="color: #6c757d; font-size: 12px;">Tel: {{ comp.phone }}</span><br>
-                            <div style="margin-top: 5px; padding-top: 5px; border-top: 1px solid #eee;">
-                                <span style="color: #0056b3; font-weight:600; font-size: 12px;">Dept: {{ comp.category }}</span><br>
-                                <span class="text-{{ comp.priority }}" style="font-size: 12px;">Priority: {{ comp.priority }}</span>
+                            <small>Roll: {{ comp.roll_no }}</small><br>
+                            <small>Tel: {{ comp.phone }}</small>
+                        </td>
+                        <td>{{ comp.text }}</td>
+                        <td>
+                            <div class="progress-bg">
+                                <div class="progress-fill" style="width: {{ comp.progress }}%;"></div>
                             </div>
-                        </td>
-                        <td style="line-height: 1.5;">{{ comp.text }}</td>
-                        <td>
-                            {% if comp.image_file %}
-                                <a href="{{ url_for('uploaded_file', filename=comp.image_file) }}" target="_blank" style="color: #0056b3; text-decoration: none; font-weight: 600; font-size: 13px;">View File</a>
-                            {% else %}
-                                <span style="color: #adb5bd; font-size: 13px;">N/A</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            <span class="badge {% if comp.status == 'Pending' %}bg-pending{% elif comp.status == 'In Processing' %}bg-processing{% else %}bg-solved{% endif %}">{{ comp.status }}</span>
+                            <small><b>{{ comp.status }} ({{ comp.progress }}%)</b></small>
                         </td>
                         <td>
                             <form action="/update_status/{{ comp.id }}" method="POST">
-                                <button type="submit" class="btn-status">Update Status</button>
+                                <button type="submit" class="btn btn-update">Update State</button>
                             </form>
                             <form action="/delete_complaint/{{ comp.id }}" method="POST">
-                                <button type="submit" class="btn-delete">Delete Record</button>
+                                <button type="submit" class="btn btn-delete">Delete</button>
                             </form>
                         </td>
                     </tr>
                     {% else %}
-                    <tr><td colspan="6" style="text-align:center; padding: 40px; color: #6c757d;">No complaints found in the database.</td></tr>
+                    <tr><td colspan="5" style="text-align:center; padding: 20px; color:#888;">No records found.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>
