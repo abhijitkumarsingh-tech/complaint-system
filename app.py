@@ -7,18 +7,19 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import threading
-import csv  # 🔥 NAYA: Excel/CSV Report ke liye
+import csv
 from io import StringIO
+import re  
+from datetime import timedelta  
 
 app = Flask(__name__)
 app.secret_key = 'abhijit_super_secret_master_key'
 
-# ==========================================
-# 🛑 ADMIN EMAIL SETTINGS
-# ==========================================
+# 🔥 7-Din ka Login Session
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
+
 ADMIN_EMAIL = "abhijitkumarsingh74@gmail.com"  
 EMAIL_PASSWORD = "tpclotfvlywdomkf"        
-# ==========================================
 
 UPLOAD_FOLDER = 'uploads'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
@@ -43,7 +44,7 @@ def send_email(to_email, subject, body):
         server.sendmail(ADMIN_EMAIL, to_email, msg.as_string())
         server.quit()
     except Exception as e:
-        print("EMAIL ERROR: ", e, file=sys.stderr)
+        pass
 
 # --- Database Tables ---
 class User(db.Model):
@@ -58,8 +59,8 @@ class Complaint(db.Model):
     name = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(120), nullable=False)
     phone = db.Column(db.String(20), nullable=False)
-    category = db.Column(db.String(50), nullable=False, default='General') # 🔥 NAYA: Category
-    priority = db.Column(db.String(20), nullable=False, default='Medium')  # 🔥 NAYA: Priority
+    category = db.Column(db.String(50), nullable=False, default='General')
+    priority = db.Column(db.String(20), nullable=False, default='Medium')
     text = db.Column(db.Text, nullable=False)
     image_file = db.Column(db.String(200), nullable=True)
     status = db.Column(db.String(20), default='Pending')
@@ -81,12 +82,24 @@ def register():
     if request.method == 'POST':
         u = request.form.get('username')
         p = request.form.get('password')
-        admin_status = True if u.lower() == 'admin' else False
+        role = request.form.get('role') # 🔥 NAYA: Dropdown se Role aayega
+        
+        if not u.isalnum():
+            flash("Username can only contain letters and numbers (no spaces).", "error")
+            return redirect(url_for('register'))
+            
+        if len(p) < 6 or not re.search(r"[a-z]", p) or not re.search(r"[A-Z]", p) or not re.search(r"[0-9]", p):
+            flash("Password must be 6+ chars with Uppercase, Lowercase, and a Number!", "error")
+            return redirect(url_for('register'))
+
+        # Role ke hisaab se Admin banayenge
+        admin_status = True if role == 'Admin' else False
+        
         try:
             new_user = User(username=u, password=p, is_admin=admin_status)
             db.session.add(new_user)
             db.session.commit()
-            flash("Account successfully created! Please log in.", "success")
+            flash(f"{role} Account successfully created! Please log in.", "success")
             return redirect(url_for('index'))
         except:
             flash("Username already exists. Please try another one.", "error")
@@ -98,17 +111,26 @@ def login():
     if request.method == 'POST':
         u = request.form.get('username')
         p = request.form.get('password')
+        role = request.form.get('role') # 🔥 NAYA: Login Role Check
+        
         try:
             user = User.query.filter_by(username=u, password=p).first()
             if user:
+                # Role Security Check
+                if (role == 'Admin' and not user.is_admin) or (role == 'Student' and user.is_admin):
+                    flash(f"Invalid Role Selected! You are not a registered {role}.", "error")
+                    return redirect(url_for('index'))
+
+                session.permanent = True  
                 session['user_id'] = user.id
                 session['is_admin'] = user.is_admin
+                
                 if user.is_admin:
                     return redirect(url_for('admin_panel'))
                 else:
                     return redirect(url_for('dashboard'))
             else:
-                flash("Invalid Credentials! Please try again.", "error")
+                flash("Invalid Username or Password!", "error")
         except:
             flash("Database Connection Error. Please try again later.", "error")
     return render_template('login.html')
@@ -132,8 +154,8 @@ def add_complaint():
         c_name = request.form.get('name')
         c_email = request.form.get('email')
         c_phone = request.form.get('phone')
-        c_category = request.form.get('category') # 🔥 Get Category
-        c_priority = request.form.get('priority') # 🔥 Get Priority
+        c_category = request.form.get('category')
+        c_priority = request.form.get('priority')
         c_text = request.form.get('complaint')
         
         filename = None
@@ -159,12 +181,10 @@ def add_complaint():
             flash("All fields are required!", "error")
 
     except Exception as e:
-        print("CRITICAL ERROR IN ADD_COMPLAINT: ", e, file=sys.stderr)
         flash("Technical Error. Please try again.", "error")
 
     return redirect(url_for('dashboard'))
 
-# 🔥 NAYA ROUTE: Download Excel/CSV Report
 @app.route('/download_report')
 def download_report():
     if 'user_id' not in session or not session.get('is_admin'):
@@ -174,10 +194,8 @@ def download_report():
     si = StringIO()
     cw = csv.writer(si)
     
-    # Excel ke Headers (Pehli Line)
     cw.writerow(['Complaint ID', 'Student Name', 'Phone', 'Email', 'Department', 'Priority Level', 'Issue Description', 'Current Status'])
     
-    # Database ka data Excel mein dalna
     for c in comps:
         cw.writerow([c.id, c.name, c.phone, c.email, c.category, c.priority, c.text, c.status])
     
@@ -234,7 +252,7 @@ def logout():
 def reset_database():
     db.drop_all() 
     db.create_all() 
-    return "Database Reset Successful! The system is now fully configured with Categories, Priorities and Export features!"
+    return "Database Reset Successful! The system is now fully configured with Roles!"
 
 if __name__ == '__main__':
     app.run(debug=True)

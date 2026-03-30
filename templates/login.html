@@ -4,33 +4,61 @@
     <meta charset="UTF-8">
     <title>Login - Complaint System</title>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; background-color: #f4f4f9; }
-        .container { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); display: inline-block; }
-        input { margin: 10px 0; padding: 10px; width: 250px; border: 1px solid #ccc; border-radius: 5px; }
-        button { padding: 10px 20px; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; width: 100%; font-weight: bold;}
-        .msg { padding: 10px; margin-bottom: 15px; border-radius: 5px; border: 1px solid #ccc; }
-        .success { background-color: #d4edda; color: #155724; border-color: #c3e6cb; }
-        .error { background-color: #f8d7da; color: #721c24; border-color: #f5c6cb; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .card { background: white; padding: 35px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 380px; }
+        h2 { text-align: center; margin-top: 0; color: #2f3640; font-size: 28px; }
+        label { font-weight: bold; color: #353b48; font-size: 14px; }
+        input, select { width: 100%; padding: 12px; border: 1px solid #ced4da; border-radius: 8px; box-sizing: border-box; font-family: inherit; font-size: 15px; margin-top: 8px; margin-bottom: 20px;}
+        
+        .input-group { position: relative; margin-top: 8px; margin-bottom: 20px; }
+        .input-group input { margin: 0; padding-right: 40px; margin-bottom: 0; }
+        .eye-icon { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 18px; color: #7f8fa6; user-select: none; }
+        
+        button { background: #1e90ff; color: white; padding: 12px; border: none; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer; width: 100%; transition: 0.3s; }
+        button:hover { background: #0984e3; }
+        .link { display: block; text-align: center; margin-top: 20px; color: #1e90ff; text-decoration: none; font-size: 14px; font-weight: bold;}
+        .msg { padding: 12px; margin-bottom: 20px; border-radius: 8px; font-size: 14px; text-align: center; font-weight: bold; }
+        .msg.error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .msg.success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h2>Complaint System Login</h2>
-
+    <div class="card">
+        <h2>Welcome Back 👋</h2>
+        
         {% with messages = get_flashed_messages(with_categories=true) %}
-          {% if messages %}
-            {% for category, message in messages %}
-              <div class="msg {{ category }}">{{ message }}</div>
-            {% endfor %}
-          {% endif %}
+          {% if messages %}{% for category, message in messages %}<div class="msg {{ category }}">{{ message }}</div>{% endfor %}{% endif %}
         {% endwith %}
 
         <form action="/login" method="POST">
-            <input type="text" name="username" placeholder="Username" required><br>
-            <input type="password" name="password" placeholder="Password" required><br>
-            <button type="submit">Login</button>
+            <label>Login As</label>
+            <select name="role" required>
+                <option value="Student">Student</option>
+                <option value="Admin">Admin</option>
+            </select>
+
+            <label>Username</label>
+            <input type="text" name="username" placeholder="Enter username" required>
+
+            <label>Password</label>
+            <div class="input-group">
+                <input type="password" name="password" id="loginPass" placeholder="Enter password" required>
+                <span class="eye-icon" id="eyeBtn">👁️</span> </div>
+
+            <button type="submit">Secure Login 🚀</button>
         </form>
-        <p><a href="/register" style="text-decoration: none; color: #007bff;">Don't have an account? Register Here</a></p>
+        <a href="/register" class="link">New user? Create an account</a>
     </div>
+
+    <script>
+        // Eye Button Logic
+        const eyeBtn = document.getElementById('eyeBtn');
+        const passField = document.getElementById('loginPass');
+        eyeBtn.addEventListener('click', () => {
+            const isPass = passField.type === 'password';
+            passField.type = isPass ? 'text' : 'password';
+            eyeBtn.textContent = isPass ? '🙈' : '👁️';
+        });
+    </script>
 </body>
 </html>
