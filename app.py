@@ -9,15 +9,15 @@ from email.mime.multipart import MIMEMultipart
 import threading
 import csv
 from io import StringIO
-import re  
-from datetime import timedelta  
+from datetime import timedelta
 
 app = Flask(__name__)
 app.secret_key = 'abhijit_super_secret_master_key'
 
-# 🔥 7-Din ka Login Session
+# 7-Days Login Session
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
 
+# Admin Email Settings
 ADMIN_EMAIL = "abhijitkumarsingh74@gmail.com"  
 EMAIL_PASSWORD = "tpclotfvlywdomkf"        
 
@@ -26,6 +26,7 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 
+# Database Connection
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://3AAj8oncwkM1Vqv.root:g9N0PtQJp9QVlVka@gateway01.ap-southeast-1.prod.aws.tidbcloud.com:4000/test?ssl_verify_cert=true&ssl_verify_identity=true'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
@@ -46,7 +47,6 @@ def send_email(to_email, subject, body):
     except Exception as e:
         pass
 
-# --- Database Tables ---
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(50), unique=True, nullable=False)
@@ -72,7 +72,6 @@ with app.app_context():
     except Exception as e:
         pass
 
-# --- Routes ---
 @app.route('/')
 def index():
     return render_template('login.html')
@@ -82,17 +81,12 @@ def register():
     if request.method == 'POST':
         u = request.form.get('username')
         p = request.form.get('password')
-        role = request.form.get('role') # 🔥 NAYA: Dropdown se Role aayega
+        role = request.form.get('role') 
         
-        if not u.isalnum():
-            flash("Username can only contain letters and numbers (no spaces).", "error")
-            return redirect(url_for('register'))
-            
-        if len(p) < 6 or not re.search(r"[a-z]", p) or not re.search(r"[A-Z]", p) or not re.search(r"[0-9]", p):
-            flash("Password must be 6+ chars with Uppercase, Lowercase, and a Number!", "error")
+        if len(p) < 3:
+            flash("Password must be at least 3 characters long.", "error")
             return redirect(url_for('register'))
 
-        # Role ke hisaab se Admin banayenge
         admin_status = True if role == 'Admin' else False
         
         try:
@@ -111,18 +105,18 @@ def login():
     if request.method == 'POST':
         u = request.form.get('username')
         p = request.form.get('password')
-        role = request.form.get('role') # 🔥 NAYA: Login Role Check
+        role = request.form.get('role') 
         
         try:
             user = User.query.filter_by(username=u, password=p).first()
             if user:
-                # Role Security Check
                 if (role == 'Admin' and not user.is_admin) or (role == 'Student' and user.is_admin):
                     flash(f"Invalid Role Selected! You are not a registered {role}.", "error")
                     return redirect(url_for('index'))
 
                 session.permanent = True  
                 session['user_id'] = user.id
+                session['username'] = user.username
                 session['is_admin'] = user.is_admin
                 
                 if user.is_admin:

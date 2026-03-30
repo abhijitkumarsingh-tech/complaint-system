@@ -4,35 +4,35 @@
     <meta charset="UTF-8">
     <title>Admin Command Center</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1e272e; color: #d2dae2; margin: 0; padding: 20px; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f9; color: #333; margin: 0; padding: 20px; }
         .container { max-width: 1200px; margin: auto; }
-        .header { display: flex; justify-content: space-between; align-items: center; background: #2f3640; padding: 20px; border-radius: 12px; margin-bottom: 20px; }
-        .logout-btn { background: #ff4757; color: white; padding: 10px 20px; text-decoration: none; border-radius: 8px; font-weight: bold; }
-        .export-btn { background: #0fb9b1; color: white; padding: 10px 20px; text-decoration: none; border-radius: 8px; font-weight: bold; margin-right: 15px; }
-        .card { background: #2f3640; padding: 25px; border-radius: 12px; margin-bottom: 20px; overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; color: #fff; }
-        th, td { padding: 15px; text-align: left; border-bottom: 1px solid #485460; vertical-align: top; }
-        th { background-color: #0fb9b1; color: white; }
+        .header { display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 20px; border-radius: 4px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border-left: 5px solid #343a40; }
+        .logout-btn { background: #dc3545; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px; font-weight: 600; font-size: 14px;}
+        .export-btn { background: #28a745; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px; font-weight: 600; font-size: 14px; margin-right: 15px; }
+        .card { background: #fff; padding: 25px; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
+        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #dee2e6; vertical-align: top; }
+        th { background-color: #343a40; color: white; text-transform: uppercase; font-size: 12px; letter-spacing: 0.5px; }
         
-        /* 🔥 Agar Solved ho toh halka dikhega (History) */
-        .row-solved td { opacity: 0.6; background-color: #2b323b; }
+        .row-solved td { opacity: 0.5; background-color: #f8f9fa; }
         .row-solved:hover td { opacity: 1; } 
 
-        .badge { padding: 6px 12px; border-radius: 20px; font-size: 13px; font-weight: bold; display: inline-block; color: white; }
-        .bg-pending { background: #ffa502; } .bg-processing { background: #1e90ff; } .bg-solved { background: #2ed573; }
-        .text-High { color: #ff4757; } .text-Medium { color: #ffa502; } .text-Low { color: #2ed573; }
-        .btn-status { background: #0fb9b1; color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; width: 100%; margin-bottom: 5px; }
-        .btn-delete { background: #ff4757; color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; width: 100%; }
-        .msg { padding: 15px; margin-bottom: 20px; border-radius: 8px; background-color: #0fb9b1; color: white; font-weight: bold; }
+        .badge { padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: bold; display: inline-block; color: white; text-transform: uppercase;}
+        .bg-pending { background: #f0ad4e; } .bg-processing { background: #17a2b8; } .bg-solved { background: #28a745; }
+        .text-High { color: #dc3545; font-weight: bold; } .text-Medium { color: #f0ad4e; font-weight: bold;} .text-Low { color: #28a745; font-weight: bold;}
+        
+        .btn-status { background: #17a2b8; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; width: 100%; margin-bottom: 5px; font-size: 12px; font-weight: bold;}
+        .btn-delete { background: #dc3545; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; width: 100%; font-size: 12px; font-weight: bold;}
+        .msg { padding: 15px; margin-bottom: 20px; border-radius: 4px; background-color: #17a2b8; color: white; font-weight: bold; font-size: 14px;}
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h2 style="margin: 0; color: white;">🛡️ Administration HQ</h2>
+            <h2 style="margin: 0; color: #343a40;">Administration Dashboard</h2>
             <div>
-                <a href="/download_report" class="export-btn">📥 Download Excel Report</a>
-                <a href="/logout" class="logout-btn">Log Out</a>
+                <a href="/download_report" class="export-btn">Export Data (CSV)</a>
+                <a href="/logout" class="logout-btn">Logout</a>
             </div>
         </div>
 
@@ -41,13 +41,13 @@
         {% endwith %}
 
         <div class="card">
-            <h3>Live Complaints & History Feed</h3>
+            <h3 style="margin-top:0; color:#495057;">Complaints Log</h3>
             <table>
                 <thead>
                     <tr>
                         <th>ID</th>
-                        <th>Student & Details</th>
-                        <th style="width: 30%;">Issue Description</th>
+                        <th>Student Information</th>
+                        <th style="width: 35%;">Issue Details</th>
                         <th>Evidence</th>
                         <th>Status</th>
                         <th>Actions</th>
@@ -56,20 +56,21 @@
                 <tbody>
                     {% for comp in complaints %}
                     <tr class="{% if comp.status == 'Solved' %}row-solved{% endif %}">
-                        <td>#{{ comp.id }}</td>
+                        <td><b>#{{ comp.id }}</b></td>
                         <td>
                             <b>{{ comp.name }}</b><br>
-                            <span style="color: #a4b0be; font-size: 12px;">📞 {{ comp.phone }}</span><br>
-                            <hr style="border-top: 1px solid #485460; margin: 5px 0;">
-                            <span style="color: #0fb9b1; font-weight:bold; font-size: 13px;">📁 {{ comp.category }}</span><br>
-                            <span class="text-{{ comp.priority }}" style="font-size: 12px; font-weight:bold;">🚨 Priority: {{ comp.priority }}</span>
+                            <span style="color: #6c757d; font-size: 12px;">Tel: {{ comp.phone }}</span><br>
+                            <div style="margin-top: 5px; padding-top: 5px; border-top: 1px solid #eee;">
+                                <span style="color: #0056b3; font-weight:600; font-size: 12px;">Dept: {{ comp.category }}</span><br>
+                                <span class="text-{{ comp.priority }}" style="font-size: 12px;">Priority: {{ comp.priority }}</span>
+                            </div>
                         </td>
-                        <td>{{ comp.text }}</td>
+                        <td style="line-height: 1.5;">{{ comp.text }}</td>
                         <td>
                             {% if comp.image_file %}
-                                <a href="{{ url_for('uploaded_file', filename=comp.image_file) }}" target="_blank">View Photo</a>
+                                <a href="{{ url_for('uploaded_file', filename=comp.image_file) }}" target="_blank" style="color: #0056b3; text-decoration: none; font-weight: 600; font-size: 13px;">View File</a>
                             {% else %}
-                                <span style="color: #747d8c;">No Photo</span>
+                                <span style="color: #adb5bd; font-size: 13px;">N/A</span>
                             {% endif %}
                         </td>
                         <td>
@@ -77,15 +78,15 @@
                         </td>
                         <td>
                             <form action="/update_status/{{ comp.id }}" method="POST">
-                                <button type="submit" class="btn-status">Update Status 🔄</button>
+                                <button type="submit" class="btn-status">Update Status</button>
                             </form>
                             <form action="/delete_complaint/{{ comp.id }}" method="POST">
-                                <button type="submit" class="btn-delete">Trash 🗑️</button>
+                                <button type="submit" class="btn-delete">Delete Record</button>
                             </form>
                         </td>
                     </tr>
                     {% else %}
-                    <tr><td colspan="6" style="text-align:center; padding: 30px;">System is clear! 🎉</td></tr>
+                    <tr><td colspan="6" style="text-align:center; padding: 40px; color: #6c757d;">No complaints found in the database.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>

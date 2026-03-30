@@ -2,36 +2,35 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Register - Complaint System</title>
+    <title>Register - Administration System</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .card { background: white; padding: 35px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 380px; }
-        h2 { text-align: center; margin-top: 0; color: #2f3640; font-size: 28px; }
-        label { font-weight: bold; color: #353b48; font-size: 14px; }
-        input, select { width: 100%; padding: 12px; border: 1px solid #ced4da; border-radius: 8px; box-sizing: border-box; font-family: inherit; font-size: 15px; margin-top: 8px; margin-bottom: 20px;}
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f9; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .card { background: white; padding: 35px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); width: 100%; max-width: 380px; border-top: 4px solid #28a745; }
+        h2 { text-align: center; margin-top: 0; color: #333; font-size: 24px; font-weight: 600; }
+        label { font-weight: 600; color: #495057; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #ced4da; border-radius: 4px; box-sizing: border-box; font-family: inherit; font-size: 15px; margin-top: 6px; margin-bottom: 20px;}
         
-        .input-group { position: relative; margin-top: 8px; margin-bottom: 5px; }
-        .input-group input { margin: 0; padding-right: 40px; }
-        .eye-icon { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 18px; color: #7f8fa6; user-select: none; }
+        .input-group { position: relative; margin-top: 6px; margin-bottom: 20px; }
+        .input-group input { margin: 0; padding-right: 60px; }
+        .eye-text { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 13px; color: #28a745; font-weight: bold; user-select: none; }
         
-        .hint { font-size: 12px; color: #747d8c; margin-bottom: 20px; display: block; line-height: 1.4; }
-        button { background: #2ed573; color: white; padding: 12px; border: none; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer; width: 100%; transition: 0.3s; }
-        button:hover { background: #26de81; }
-        .link { display: block; text-align: center; margin-top: 20px; color: #2ed573; text-decoration: none; font-size: 14px; font-weight: bold;}
-        .msg { padding: 12px; margin-bottom: 20px; border-radius: 8px; font-size: 14px; text-align: center; font-weight: bold;}
+        button { background: #28a745; color: white; padding: 12px; border: none; border-radius: 4px; font-weight: bold; font-size: 15px; cursor: pointer; width: 100%; transition: 0.2s; }
+        button:hover { background: #218838; }
+        .link { display: block; text-align: center; margin-top: 10px; color: #28a745; text-decoration: none; font-size: 13px; font-weight: bold;}
+        .msg { padding: 12px; margin-bottom: 20px; border-radius: 4px; font-size: 13px; text-align: center; font-weight: bold;}
         .msg.error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
     </style>
 </head>
 <body>
     <div class="card">
-        <h2>Create Account ✨</h2>
+        <h2>User Registration</h2>
         
         {% with messages = get_flashed_messages(with_categories=true) %}
           {% if messages %}{% for category, message in messages %}<div class="msg {{ category }}">{{ message }}</div>{% endfor %}{% endif %}
         {% endwith %}
 
         <form action="/register" method="POST">
-            <label>Register As</label>
+            <label>Select Role</label>
             <select name="role" required>
                 <option value="Student">Student</option>
                 <option value="Admin">Admin</option>
@@ -42,13 +41,13 @@
 
             <label>Password</label>
             <div class="input-group">
-                <input type="password" name="password" id="regPass" placeholder="Create strong password" required>
-                <span class="eye-icon" id="regEyeBtn">👁️</span> </div>
-            <span class="hint">Need at least 6 characters, 1 uppercase, 1 lowercase & 1 number (e.g., Abhijit123).</span>
+                <input type="password" name="password" id="regPass" placeholder="Create a password" required>
+                <span class="eye-text" id="regEyeBtn">Show</span>
+            </div>
 
-            <button type="submit">Register Now</button>
+            <button type="submit">Register Account</button>
         </form>
-        <a href="/" class="link">Already have an account? Login here</a>
+        <a href="/" class="link">Already registered? Log in</a>
     </div>
 
     <script>
@@ -57,7 +56,7 @@
         regEyeBtn.addEventListener('click', () => {
             const isPass = regPassField.type === 'password';
             regPassField.type = isPass ? 'text' : 'password';
-            regEyeBtn.textContent = isPass ? '🙈' : '👁️';
+            regEyeBtn.textContent = isPass ? 'Hide' : 'Show';
         });
     </script>
 </body>

@@ -4,18 +4,18 @@
     <meta charset="UTF-8">
     <title>Student Dashboard</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; color: #333; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; color: #333; }
         .container { max-width: 800px; margin: auto; }
-        .header { display: flex; justify-content: space-between; align-items: center; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; }
-        .logout-btn { background: #ff4757; color: white; padding: 10px 20px; text-decoration: none; border-radius: 8px; font-weight: bold; transition: 0.3s; }
-        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; }
-        input, textarea, input[type="file"], select { width: 100%; padding: 12px; margin-top: 8px; margin-bottom: 15px; border: 1px solid #ced4da; border-radius: 8px; box-sizing: border-box; font-family: inherit; }
-        button { background: #2ed573; color: white; padding: 12px 25px; border: none; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer; width: 100%; transition: 0.3s; }
-        .badge { padding: 5px 12px; border-radius: 20px; font-size: 13px; font-weight: bold; color: white; }
-        .bg-pending { background: #ffa502; } .bg-processing { background: #1e90ff; } .bg-solved { background: #2ed573; }
-        .p-high { color: #ff4757; font-weight: bold;} .p-med { color: #ffa502; font-weight: bold;} .p-low { color: #2ed573; font-weight: bold;}
-        .complaint-img { max-width: 100%; height: auto; border-radius: 8px; margin-top: 10px; max-height: 200px; object-fit: cover; }
-        .msg { padding: 15px; margin-bottom: 20px; border-radius: 8px; font-weight: bold; }
+        .header { display: flex; justify-content: space-between; align-items: center; background: white; padding: 20px; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 20px; border-bottom: 3px solid #0056b3; }
+        .logout-btn { background: #dc3545; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px; font-weight: 600; font-size: 14px; }
+        .card { background: white; padding: 25px; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        label { font-weight: 600; color: #495057; font-size: 13px; text-transform: uppercase; }
+        input, textarea, input[type="file"], select { width: 100%; padding: 10px; margin-top: 6px; margin-bottom: 15px; border: 1px solid #ced4da; border-radius: 4px; box-sizing: border-box; font-family: inherit; }
+        button { background: #0056b3; color: white; padding: 12px 25px; border: none; border-radius: 4px; font-weight: bold; font-size: 15px; cursor: pointer; width: 100%; }
+        .badge { padding: 4px 10px; border-radius: 4px; font-size: 12px; font-weight: bold; color: white; text-transform: uppercase; }
+        .bg-pending { background: #f0ad4e; } .bg-processing { background: #17a2b8; } .bg-solved { background: #28a745; }
+        .p-high { color: #dc3545; font-weight: bold;} .p-med { color: #f0ad4e; font-weight: bold;} .p-low { color: #28a745; font-weight: bold;}
+        .msg { padding: 15px; margin-bottom: 20px; border-radius: 4px; font-weight: bold; font-size: 14px; }
         .msg.success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
         .msg.error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
     </style>
@@ -23,28 +23,31 @@
 <body>
     <div class="container">
         <div class="header">
-            <h2 style="margin: 0;">Welcome, {{ session.get('username', 'User') }} 👋</h2>
-            <a href="/logout" class="logout-btn">Log Out</a>
+            <h2 style="margin: 0;">Student Portal | {{ session.get('username', 'User') }}</h2>
+            <a href="/logout" class="logout-btn">Logout</a>
         </div>
 
         {% with messages = get_flashed_messages(with_categories=true) %}
           {% if messages %}{% for category, message in messages %}<div class="msg {{ category }}">{{ message }}</div>{% endfor %}{% endif %}
         {% endwith %}
 
-        <div class="card" style="border-top: 5px solid #1e90ff;">
-            <h3 style="margin-top: 0;">📝 Register a New Complaint</h3>
+        <div class="card">
+            <h3 style="margin-top: 0; color: #0056b3;">Submit New Complaint</h3>
             <form action="/add_complaint" method="POST" enctype="multipart/form-data">
                 <div style="display: flex; gap: 15px;">
-                    <div style="flex: 1;"><label><b>Full Name</b></label><input type="text" name="name" required></div>
-                    <div style="flex: 1;"><label><b>Phone Number</b></label><input type="number" name="phone" required></div>
+                    <div style="flex: 1;"><label>Full Name</label><input type="text" name="name" required></div>
+                    <div style="flex: 1;">
+                        <label>Phone Number</label>
+                        <input type="text" name="phone" pattern="[0-9]{10}" title="Please enter a valid 10-digit mobile number" required>
+                    </div>
                 </div>
                 
-                <label><b>Email Address</b></label>
+                <label>Email Address</label>
                 <input type="email" name="email" required>
                 
                 <div style="display: flex; gap: 15px;">
                     <div style="flex: 1;">
-                        <label><b>Department / Category</b></label>
+                        <label>Department / Category</label>
                         <select name="category">
                             <option value="IT & Wi-Fi">IT & Wi-Fi</option>
                             <option value="Hostel & Accommodation">Hostel & Accommodation</option>
@@ -54,38 +57,36 @@
                         </select>
                     </div>
                     <div style="flex: 1;">
-                        <label><b>Priority Level</b></label>
+                        <label>Priority Level</label>
                         <select name="priority">
-                            <option value="Low">Low (General Issue)</option>
-                            <option value="Medium" selected>Medium (Needs Attention)</option>
-                            <option value="High">High (Urgent!)</option>
+                            <option value="Low">Low (General)</option>
+                            <option value="Medium" selected>Medium (Standard)</option>
+                            <option value="High">High (Urgent)</option>
                         </select>
                     </div>
                 </div>
 
-                <label><b>Complaint Details</b></label>
+                <label>Complaint Details</label>
                 <textarea name="complaint" rows="4" required></textarea>
                 
-                <label><b>Attach Evidence/Photo (Optional)</b></label>
+                <label>Attach Evidence (Optional)</label>
                 <input type="file" name="photo" accept="image/*">
                 
-                <button type="submit">Submit Complaint 🚀</button>
+                <button type="submit">Submit Complaint</button>
             </form>
         </div>
 
-        <h3>⏳ Your Recent Complaints</h3>
+        <h3 style="color: #495057;">Your Complaint History</h3>
         {% for comp in complaints %}
-            <div class="card">
-                <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-                    <span style="color: #747d8c; font-size: 14px;">#{{ comp.id }} | 📁 {{ comp.category }} | 🚨 Priority: <span class="{% if comp.priority == 'High' %}p-high{% elif comp.priority == 'Medium' %}p-med{% else %}p-low{% endif %}">{{ comp.priority }}</span></span>
+            <div class="card" style="padding: 15px;">
+                <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 10px;">
+                    <span style="color: #6c757d; font-size: 13px;">ID: #{{ comp.id }} | Dept: {{ comp.category }} | Priority: <span class="{% if comp.priority == 'High' %}p-high{% elif comp.priority == 'Medium' %}p-med{% else %}p-low{% endif %}">{{ comp.priority }}</span></span>
                     <span class="badge {% if comp.status == 'Pending' %}bg-pending{% elif comp.status == 'In Processing' %}bg-processing{% else %}bg-solved{% endif %}">{{ comp.status }}</span>
                 </div>
-                <h4 style="margin: 5px 0;">{{ comp.name }}</h4>
-                <p style="margin-top: 5px; line-height: 1.5;">{{ comp.text }}</p>
-                {% if comp.image_file %}<img src="{{ url_for('uploaded_file', filename=comp.image_file) }}" class="complaint-img">{% endif %}
+                <p style="margin: 0; line-height: 1.5; font-size: 14px;">{{ comp.text }}</p>
             </div>
         {% else %}
-            <p style="text-align: center; color: #747d8c;">No complaints found. ✨</p>
+            <p style="text-align: center; color: #6c757d; padding: 20px;">No records found.</p>
         {% endfor %}
     </div>
 </body>
