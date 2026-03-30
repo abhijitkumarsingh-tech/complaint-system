@@ -2,18 +2,16 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Login - Administration System</title>
+    <title>System Login</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f9; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: #f4f6f9; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
         .card { background: white; padding: 35px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); width: 100%; max-width: 380px; border-top: 4px solid #0056b3; }
         h2 { text-align: center; margin-top: 0; color: #333; font-size: 24px; font-weight: 600; }
-        label { font-weight: 600; color: #495057; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; }
-        input, select { width: 100%; padding: 10px; border: 1px solid #ced4da; border-radius: 4px; box-sizing: border-box; font-family: inherit; font-size: 15px; margin-top: 6px; margin-bottom: 20px;}
-        
+        label { font-weight: 600; color: #495057; font-size: 13px; text-transform: uppercase; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #ced4da; border-radius: 4px; box-sizing: border-box; font-size: 15px; margin-top: 6px; margin-bottom: 20px;}
         .input-group { position: relative; margin-top: 6px; margin-bottom: 20px; }
         .input-group input { margin: 0; padding-right: 60px; }
         .eye-text { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 13px; color: #0056b3; font-weight: bold; user-select: none; }
-        
         button { background: #0056b3; color: white; padding: 12px; border: none; border-radius: 4px; font-weight: bold; font-size: 15px; cursor: pointer; width: 100%; transition: 0.2s; }
         button:hover { background: #004494; }
         .link { display: block; text-align: center; margin-top: 20px; color: #0056b3; text-decoration: none; font-size: 13px; font-weight: bold;}
@@ -25,32 +23,30 @@
 <body>
     <div class="card">
         <h2>System Login</h2>
-        
         {% with messages = get_flashed_messages(with_categories=true) %}
-          {% if messages %}{% for category, message in messages %}<div class="msg {{ category }}">{{ message }}</div>{% endfor %}{% endif %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="msg {{ category }}">{{ message }}</div>
+            {% endfor %}
+          {% endif %}
         {% endwith %}
-
         <form action="/login" method="POST">
             <label>Role</label>
             <select name="role" required>
                 <option value="Student">Student</option>
                 <option value="Admin">Admin</option>
             </select>
-
             <label>Username</label>
             <input type="text" name="username" placeholder="Enter username" required>
-
             <label>Password</label>
             <div class="input-group">
                 <input type="password" name="password" id="loginPass" placeholder="Enter password" required>
                 <span class="eye-text" id="eyeBtn">Show</span>
             </div>
-
             <button type="submit">Log In</button>
         </form>
         <a href="/register" class="link">Create a new account</a>
     </div>
-
     <script>
         const eyeBtn = document.getElementById('eyeBtn');
         const passField = document.getElementById('loginPass');
