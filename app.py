@@ -6,6 +6,7 @@ import sys
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+import threading  # 🔥 NAYA TOOL: Background mein email bhejne ke liye
 
 app = Flask(__name__)
 app.secret_key = 'abhijit_super_secret_master_key'
@@ -120,10 +121,8 @@ def dashboard():
     user_comps = Complaint.query.filter_by(user_id=session['user_id']).order_by(Complaint.id.desc()).all()
     return render_template('index.html', complaints=user_comps)
 
-# 🔥 YAHAN FIX KIYA HAI: GET aur POST dono allow kiye aur try-except lagaya
 @app.route('/add_complaint', methods=['GET', 'POST'])
 def add_complaint():
-    # Agar browser galti se direct page khol le toh dashboard par wapas bhejo
     if request.method == 'GET':
         return redirect(url_for('dashboard'))
 
@@ -141,7 +140,6 @@ def add_complaint():
             file = request.files['photo']
             if file.filename != '':
                 filename = secure_filename(file.filename)
-                # Ensure folder exists on the cloud server
                 if not os.path.exists(app.config['UPLOAD_FOLDER']):
                     os.makedirs(app.config['UPLOAD_FOLDER'])
                 file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
@@ -151,18 +149,20 @@ def add_complaint():
             db.session.add(new_c)
             db.session.commit()
             
-            # 📧 ADMIN KO EMAIL BHEJO
+            # 📧 ADMIN KO EMAIL BHEJO (BACKGROUND MEIN) 🔥
             subject = f"New Complaint Alert: #{new_c.id} from {c_name}"
             body = f"Hello Admin,\n\nA new complaint has been registered in the system.\n\nStudent Name: {c_name}\nContact Email: {c_email}\nPhone Number: {c_phone}\n\nComplaint Details:\n{c_text}\n\nPlease log in to the Admin Dashboard to review the issue and take necessary action.\n\nBest regards,\nAutomated Complaint System"
-            send_email(ADMIN_EMAIL, subject, body)
+            
+            # Threading use karke email bhejne se website atakegi nahi!
+            threading.Thread(target=send_email, args=(ADMIN_EMAIL, subject, body)).start()
 
-            flash("Complaint submitted successfully! You will be notified via email when it is resolved.", "success")
+            flash("Complaint submitted successfully!", "success")
         else:
             flash("All fields are required!", "error")
 
     except Exception as e:
         print("CRITICAL ERROR IN ADD_COMPLAINT: ", e, file=sys.stderr)
-        flash("Server pe thodi delay hui, par error handle ho gaya! Phir se try karein.", "error")
+        flash("Technical Error. Please try again.", "error")
 
     return redirect(url_for('dashboard'))
 
@@ -187,10 +187,11 @@ def update_status(id):
             elif comp.status == 'In Processing':
                 comp.status = 'Solved'
                 
-                # 📧 STUDENT KO EMAIL BHEJO (Jab Solved ho)
+                # 📧 STUDENT KO EMAIL BHEJO (BACKGROUND MEIN) 🔥
                 subject = f"Status Update: Your Complaint #{comp.id} has been Resolved"
                 body = f"Hello {comp.name},\n\nGood news! Your recent complaint regarding:\n\n\"{comp.text}\"\n\nhas been reviewed and marked as SOLVED by the Administration.\n\nIf you have any further issues, please feel free to submit a new request.\n\nThank you,\nAdministration Team"
-                send_email(comp.email, subject, body)
+                
+                threading.Thread(target=send_email, args=(comp.email, subject, body)).start()
                 
             else:
                 comp.status = 'Pending'
