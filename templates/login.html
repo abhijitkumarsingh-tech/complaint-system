@@ -2,59 +2,96 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>System Login</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <title>Secure Login | Campus Portal</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background-color: #f4f6f9; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .card { background: white; padding: 35px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); width: 100%; max-width: 380px; border-top: 4px solid #0056b3; }
-        h2 { text-align: center; margin-top: 0; color: #333; font-size: 24px; font-weight: 600; }
-        label { font-weight: 600; color: #495057; font-size: 13px; text-transform: uppercase; }
-        input, select { width: 100%; padding: 10px; border: 1px solid #ced4da; border-radius: 4px; box-sizing: border-box; font-size: 15px; margin-top: 6px; margin-bottom: 20px;}
-        .input-group { position: relative; margin-top: 6px; margin-bottom: 20px; }
-        .input-group input { margin: 0; padding-right: 60px; }
-        .eye-text { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 13px; color: #0056b3; font-weight: bold; user-select: none; }
-        button { background: #0056b3; color: white; padding: 12px; border: none; border-radius: 4px; font-weight: bold; font-size: 15px; cursor: pointer; width: 100%; transition: 0.2s; }
-        button:hover { background: #004494; }
-        .link { display: block; text-align: center; margin-top: 20px; color: #0056b3; text-decoration: none; font-size: 13px; font-weight: bold;}
-        .msg { padding: 12px; margin-bottom: 20px; border-radius: 4px; font-size: 13px; text-align: center; font-weight: bold; }
-        .msg.error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
-        .msg.success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .glass-card { 
+            background: #ffffff; 
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+        }
+        .admin-glow { border-top: 8px solid #000000; }
+        .student-glow { border-top: 8px solid #4f46e5; }
+        /* Labels ko ekdum dark karne ke liye */
+        .dark-label { color: #000000 !important; font-weight: 800; }
     </style>
 </head>
-<body>
-    <div class="card">
-        <h2>System Login</h2>
+<body class="bg-[#f0f4f8] flex items-center justify-center min-h-screen p-4">
+
+    <div id="card" class="glass-card student-glow w-full max-w-[420px] rounded-[2.5rem] p-10 transition-all duration-500 transform hover:scale-[1.01]">
+        
+        <header class="text-center mb-10">
+            <h1 class="text-[10px] font-black text-indigo-600 uppercase tracking-[0.4em] mb-2 italic">Campus Support</h1>
+            <h2 id="title" class="text-3xl font-black text-black tracking-tight italic uppercase">Student Login</h2>
+        </header>
+
         {% with messages = get_flashed_messages(with_categories=true) %}
-          {% if messages %}
-            {% for category, message in messages %}
-              <div class="msg {{ category }}">{{ message }}</div>
-            {% endfor %}
-          {% endif %}
-        {% endwith %}
-        <form action="/login" method="POST">
-            <label>Role</label>
-            <select name="role" required>
-                <option value="Student">Student</option>
-                <option value="Admin">Admin</option>
-            </select>
-            <label>Username</label>
-            <input type="text" name="username" placeholder="Enter username" required>
-            <label>Password</label>
-            <div class="input-group">
-                <input type="password" name="password" id="loginPass" placeholder="Enter password" required>
-                <span class="eye-text" id="eyeBtn">Show</span>
+          {% if messages %}{% for cat, msg in messages %}
+            <div class="mb-6 p-4 rounded-2xl bg-rose-50 text-rose-600 text-sm font-black border border-rose-100 text-center uppercase tracking-tighter">
+                {{ msg }}
             </div>
-            <button type="submit">Log In</button>
+          {% endfor %}{% endif %}
+        {% endwith %}
+
+        <form action="/login" method="POST" class="space-y-6">
+            <div class="space-y-2">
+                <label class="text-[11px] dark-label uppercase tracking-widest ml-1">Username / ID</label>
+                <input type="text" name="username" placeholder="Enter your ID" class="w-full p-4 bg-slate-50 border-2 border-slate-100 focus:border-indigo-600 focus:bg-white rounded-2xl text-sm font-bold transition-all outline-none text-black" required>
+            </div>
+            
+            <div class="space-y-2">
+                <label class="text-[11px] dark-label uppercase tracking-widest ml-1">Password</label>
+                <input type="password" name="password" placeholder="••••••••" class="w-full p-4 bg-slate-50 border-2 border-slate-100 focus:border-indigo-600 focus:bg-white rounded-2xl text-sm font-bold transition-all outline-none text-black" required>
+            </div>
+            
+            <button type="submit" id="loginBtn" class="w-full py-4 bg-black text-white font-black rounded-2xl shadow-xl hover:bg-indigo-700 transition-all duration-300 active:scale-95 uppercase tracking-[0.2em] text-xs">
+                Sign In to Portal
+            </button>
         </form>
-        <a href="/register" class="link">Create a new account</a>
+        
+        <div id="studentLinks" class="mt-8 text-center space-y-6">
+            <p class="text-sm font-bold text-slate-500">
+                New student? <a href="/register" class="text-indigo-600 font-black hover:underline decoration-2">Register account</a>
+            </p>
+            <div class="pt-4 border-t border-slate-100">
+                <button onclick="toggleAdmin(true)" class="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-black transition-colors flex items-center justify-center gap-2 mx-auto">
+                    🔐 Access Admin HQ
+                </button>
+            </div>
+        </div>
+
+        <div id="adminLinks" class="mt-8 text-center hidden">
+            <button onclick="toggleAdmin(false)" class="text-[10px] font-black text-slate-500 uppercase tracking-widest hover:text-indigo-600 transition-colors italic">
+                ← Back to Student Login
+            </button>
+        </div>
     </div>
+
     <script>
-        const eyeBtn = document.getElementById('eyeBtn');
-        const passField = document.getElementById('loginPass');
-        eyeBtn.addEventListener('click', () => {
-            const isPass = passField.type === 'password';
-            passField.type = isPass ? 'text' : 'password';
-            eyeBtn.textContent = isPass ? 'Hide' : 'Show';
-        });
+        function toggleAdmin(isAdmin) {
+            const card = document.getElementById('card');
+            const title = document.getElementById('title');
+            const btn = document.getElementById('loginBtn');
+            const sLinks = document.getElementById('studentLinks');
+            const aLinks = document.getElementById('adminLinks');
+
+            if(isAdmin) {
+                card.classList.replace('student-glow', 'admin-glow');
+                title.innerText = "Admin Security";
+                title.classList.add('text-black');
+                btn.classList.replace('bg-black', 'bg-slate-900');
+                sLinks.classList.add('hidden');
+                aLinks.classList.remove('hidden');
+            } else {
+                card.classList.replace('admin-glow', 'student-glow');
+                title.innerText = "Student Login";
+                btn.classList.replace('bg-slate-900', 'bg-black');
+                sLinks.classList.remove('hidden');
+                aLinks.classList.add('hidden');
+            }
+        }
     </script>
 </body>
 </html>
