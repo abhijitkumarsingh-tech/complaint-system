@@ -105,7 +105,7 @@ def register():
         try:
             new_user = User(username=u, password=p, email=e, is_admin=False)
             db.session.add(new_user); db.session.commit()
-            flash("Student Account Created! Please login.", "success")
+            flash("Account Created! Please login.", "success")
             return redirect(url_for('index'))
         except: flash("Username already exists", "error")
     return render_template('register.html')
@@ -121,15 +121,15 @@ def add_new_admin():
     try:
         admin_user = User(username=new_u, password=new_p, full_name=new_n, email=new_e, phone=new_ph, is_admin=True)
         db.session.add(admin_user); db.session.commit()
-        flash(f"New Admin {new_n} added successfully!", "success")
-    except: flash("Admin username already exists!", "error")
+        flash(f"New Admin {new_n} added!", "success")
+    except: flash("Error adding admin", "error")
     return redirect(url_for('admin_panel'))
 
 @app.route('/delete_admin/<int:admin_id>', methods=['POST'])
 def delete_admin(admin_id):
     if not session.get('is_admin'): return redirect(url_for('index'))
     if admin_id == session.get('user_id'):
-        flash("Action Denied: Master account protection!", "error")
+        flash("Cannot delete master account!", "error")
         return redirect(url_for('admin_panel'))
     admin_to_del = User.query.get(admin_id)
     if admin_to_del:
@@ -142,13 +142,15 @@ def add_complaint():
     if 'user_id' not in session: return redirect(url_for('index'))
     file = request.files.get('photo')
     if not file or file.filename == '':
-        flash("Evidence photo is mandatory!", "error")
+        flash("Photo is mandatory!", "error")
         return redirect(url_for('dashboard'))
     fname = secure_filename(file.filename)
     file.save(os.path.join(app.config['UPLOAD_FOLDER'], fname))
+    
+    # Yahan student apna naam bhar sakta hai
     new_c = Complaint(
         user_id=session['user_id'], 
-        name=request.form.get('name'),
+        name=request.form.get('name'), 
         roll_no=request.form.get('roll_no', '').upper(),
         email=request.form.get('email'), 
         phone=request.form.get('phone'),
@@ -158,20 +160,18 @@ def add_complaint():
         image_file=fname
     )
     db.session.add(new_c); db.session.commit()
-    e_body = f"New Incident Reported by {new_c.name}\nCategory: {new_c.category}\nIssue: {new_c.text}"
+    e_body = f"New Incident by {new_c.name}\nCategory: {new_c.category}\nPriority: {new_c.priority}\n\nIssue: {new_c.text}"
     threading.Thread(target=send_email_async, args=(ADMIN_EMAIL_DEFAULT, "⚠️ New Campus Incident", e_body)).start()
-    flash("Report submitted successfully!", "success")
+    flash("Report submitted!", "success")
     return redirect(url_for('dashboard'))
 
-# --- FIXED DELETE COMPLAINT ROUTE ---
 @app.route('/delete_complaint/<int:id>', methods=['POST'])
 def delete_complaint(id):
     if not session.get('is_admin'): return redirect(url_for('index'))
     comp = Complaint.query.get(id)
     if comp:
-        db.session.delete(comp)
-        db.session.commit()
-        flash(f"Complaint #{id} deleted successfully", "success")
+        db.session.delete(comp); db.session.commit()
+        flash(f"Complaint #{id} deleted", "success")
     return redirect(url_for('admin_panel'))
 
 @app.route('/dashboard')
@@ -202,7 +202,7 @@ def update_status(id):
             comp.status, comp.progress = 'In Processing', 50
         elif comp.status == 'In Processing': 
             comp.status, comp.progress = 'Solved', 100
-            s_body = f"Hello {comp.name},\nYour issue ({comp.category}) has been SOLVED.\nRemark: {comp.admin_remark}"
+            s_body = f"Hello {comp.name},\nYour issue ({comp.category}) is SOLVED.\nRemark: {comp.admin_remark}"
             threading.Thread(target=send_email_async, args=(comp.email, "Status Update: Solved", s_body)).start()
         db.session.commit()
     return redirect(url_for('admin_panel'))
@@ -213,9 +213,9 @@ def export_csv():
     all_complaints = Complaint.query.all()
     si = StringIO()
     cw = csv.writer(si)
-    cw.writerow(['ID', 'Name', 'Roll No', 'Category', 'Status', 'Date'])
+    cw.writerow(['ID', 'Name', 'Roll No', 'Category', 'Priority', 'Complaint', 'Status', 'Date'])
     for c in all_complaints:
-        cw.writerow([c.id, c.name, c.roll_no, c.category, c.status, c.created_at])
+        cw.writerow([c.id, c.name, c.roll_no, c.category, c.priority, c.text, c.status, c.created_at])
     output = make_response(si.getvalue())
     output.headers["Content-Disposition"] = "attachment; filename=campus_logs.csv"
     output.headers["Content-type"] = "text/csv"

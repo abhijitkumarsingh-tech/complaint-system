@@ -32,15 +32,23 @@
         <div class="lg:col-span-8 order-1">
             <div class="bg-white rounded-[2rem] lg:rounded-3xl shadow-sm border border-slate-200 p-6 lg:p-10">
                 <div class="mb-8 lg:mb-10 text-center lg:text-left">
-                    <h3 class="text-2xl lg:text-3xl font-black text-black italic">Submit New Report</h3>
-                    <p class="text-slate-500 font-medium text-xs lg:text-sm mt-1">Fill details below. All bold fields are mandatory.</p>
+                    <h3 class="text-2xl lg:text-3xl font-black text-black italic text-indigo-600">Submit New Report</h3>
+                    <p class="text-slate-500 font-medium text-xs lg:text-sm mt-1">Make sure to provide accurate details for faster resolution.</p>
                 </div>
+
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                  {% if messages %}{% for cat, msg in messages %}
+                    <div class="mb-6 p-4 rounded-2xl bg-emerald-50 text-emerald-600 text-[10px] font-black uppercase text-center border border-emerald-100">
+                        {{ msg }}
+                    </div>
+                  {% endfor %}{% endif %}
+                {% endwith %}
 
                 <form action="/add_complaint" method="POST" enctype="multipart/form-data" class="space-y-5 lg:space-y-6">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">
                         <div class="space-y-2">
-                            <label class="dark-label ml-1">Student Name</label>
-                            <input type="text" name="name" value="{{ session.username }}" readonly class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-slate-500 font-bold text-sm outline-none">
+                            <label class="dark-label ml-1">Your Full Name</label>
+                            <input type="text" name="name" value="{{ session.username }}" placeholder="Enter your name" class="w-full p-4 bg-white border-2 border-slate-100 focus:border-indigo-600 rounded-2xl text-black font-bold text-sm outline-none transition-all" required>
                         </div>
                         <div class="space-y-2">
                             <label class="dark-label ml-1">Roll Number</label>
@@ -81,7 +89,7 @@
 
                     <div class="space-y-2">
                         <label class="dark-label ml-1">Full Issue Details</label>
-                        <textarea name="complaint" id="complaintBox" rows="4" class="w-full p-4 bg-white border-2 border-slate-100 focus:border-indigo-600 rounded-2xl text-sm font-bold outline-none resize-none transition-all" required></textarea>
+                        <textarea name="complaint" id="complaintBox" rows="4" class="w-full p-4 bg-white border-2 border-slate-100 focus:border-indigo-600 rounded-2xl text-sm font-bold text-black outline-none resize-none transition-all" required></textarea>
                     </div>
                     
                     <div class="space-y-2">
