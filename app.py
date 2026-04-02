@@ -13,7 +13,7 @@ app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
 
 # --- CONFIGURATION ---
 ADMIN_EMAIL_DEFAULT = "abhijitkumarsingh74@gmail.com"  
-EMAIL_PASSWORD = "tpclotfvlywdomkf"          
+EMAIL_PASSWORD = "pevo azcr dbfa armb"          
 UPLOAD_FOLDER = 'uploads'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 if not os.path.exists(UPLOAD_FOLDER):
