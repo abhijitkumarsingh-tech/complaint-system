@@ -9,12 +9,12 @@
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
         .sidebar-gradient { background: #0f172a; }
-        th { color: #000000 !important; font-weight: 900 !important; font-size: 10px !important; border-bottom: 2px solid #e2e8f0 !important; text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap; }
+        /* Table Header: Dark Black & Extra Bold */
+        th { color: #000000 !important; font-weight: 900 !important; font-size: 11px !important; border-bottom: 2px solid #cbd5e1 !important; text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap; }
         .modal-active { overflow: hidden; }
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
         
-        /* Mobile Sidebar Logic */
         @media (max-width: 1024px) {
             #sidebar { transform: translateX(-100%); transition: transform 0.3s ease-in-out; }
             #sidebar.open { transform: translateX(0); }
@@ -23,7 +23,7 @@
 </head>
 <body class="bg-slate-50 min-h-screen flex flex-col lg:flex-row text-slate-900 overflow-x-hidden">
 
-    <div class="lg:hidden bg-[#0f172a] p-4 flex justify-between items-center text-white sticky top-0 z-50">
+    <div class="lg:hidden bg-[#0f172a] p-4 flex justify-between items-center text-white sticky top-0 z-50 shadow-lg">
         <h1 class="text-xl font-black italic">ADMIN<span class="text-sky-400">HQ</span></h1>
         <button onclick="toggleSidebar()" class="p-2 bg-white/10 rounded-lg text-white">☰</button>
     </div>
@@ -65,95 +65,84 @@
     </aside>
 
     <div class="flex-1 w-full overflow-x-hidden">
-        <header class="bg-white border-b border-slate-200 px-4 lg:px-8 py-4 flex justify-between items-center sticky top-0 z-40 shadow-sm lg:relative">
-            <h2 class="text-sm lg:text-lg font-black text-black uppercase tracking-tight italic">Admin Control</h2>
-            <div class="flex items-center gap-3 lg:gap-4">
+        <header class="bg-white border-b border-slate-200 px-4 lg:px-8 py-4 flex justify-between items-center sticky top-0 z-40 shadow-sm">
+            <h2 class="text-sm lg:text-lg font-black text-black uppercase tracking-tight italic">Administration</h2>
+            <div class="flex items-center gap-3">
                 <div class="text-right hidden sm:block">
                     <p class="text-[9px] font-black text-emerald-600 uppercase tracking-widest italic">Master Access</p>
                     <p class="text-sm font-black text-black">{{ session.full_name or 'Abhijit' }}</p>
                 </div>
-                <div class="w-8 h-8 lg:w-10 lg:h-10 bg-slate-900 rounded-xl flex items-center justify-center text-white font-black uppercase tracking-tighter text-xs">A</div>
+                <div class="w-8 h-8 lg:w-10 lg:h-10 bg-slate-900 rounded-xl flex items-center justify-center text-white font-black uppercase text-xs">A</div>
             </div>
         </header>
 
         <div class="p-4 lg:p-8 max-w-7xl mx-auto">
-            {% with messages = get_flashed_messages(with_categories=true) %}
-              {% if messages %}{% for cat, msg in messages %}
-                <div class="mb-6 p-4 rounded-2xl {% if cat == 'success' %}bg-emerald-50 text-emerald-600{% else %}bg-rose-50 text-rose-600{% endif %} text-[10px] font-black uppercase border border-current/10 text-center">
-                    {{ msg }}
-                </div>
-              {% endfor %}{% endif %}
-            {% endwith %}
-
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 lg:gap-6 mb-8 lg:mb-10">
-                <div class="bg-white p-5 lg:p-6 rounded-2xl lg:rounded-3xl border border-slate-200 shadow-sm">
-                    <p class="text-[9px] font-black text-slate-400 uppercase mb-1">Total</p>
-                    <h3 class="text-xl lg:text-3xl font-black text-black">{{ stats.total }}</h3>
+                <div class="bg-white p-5 lg:p-6 rounded-2xl border border-slate-200 shadow-md">
+                    <p class="text-[10px] font-black text-slate-400 uppercase">Total</p>
+                    <h3 class="text-2xl font-black text-black">{{ stats.total }}</h3>
                 </div>
-                <div class="bg-white p-5 lg:p-6 rounded-2xl lg:rounded-3xl border border-slate-200 border-l-4 lg:border-l-8 border-l-amber-400 shadow-sm">
-                    <p class="text-[9px] font-black text-slate-400 uppercase mb-1">Pending</p>
-                    <h3 class="text-xl lg:text-3xl font-black text-black">{{ stats.pending }}</h3>
+                <div class="bg-white p-5 lg:p-6 rounded-2xl border border-slate-200 border-l-8 border-l-amber-400 shadow-md">
+                    <p class="text-[10px] font-black text-slate-400 uppercase">Pending</p>
+                    <h3 class="text-2xl font-black text-black">{{ stats.pending }}</h3>
                 </div>
-                <div class="bg-white p-5 lg:p-6 rounded-2xl lg:rounded-3xl border border-slate-200 border-l-4 lg:border-l-8 border-l-emerald-500 shadow-sm">
-                    <p class="text-[9px] font-black text-slate-400 uppercase mb-1">Solved</p>
-                    <h3 class="text-xl lg:text-3xl font-black text-black">{{ stats.solved }}</h3>
+                <div class="bg-white p-5 lg:p-6 rounded-2xl border border-slate-200 border-l-8 border-l-emerald-500 shadow-md">
+                    <p class="text-[10px] font-black text-slate-400 uppercase">Solved</p>
+                    <h3 class="text-2xl font-black text-black">{{ stats.solved }}</h3>
                 </div>
             </div>
 
-            <div class="bg-white rounded-2xl lg:rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden">
-                <div class="p-4 lg:p-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
-                    <h3 class="font-black text-black uppercase tracking-tight text-[10px] lg:text-sm">Complaint tracking</h3>
-                    <span class="text-[8px] font-black text-slate-400 uppercase tracking-widest bg-white px-2 py-1 rounded-full border border-slate-200">Live</span>
+            <div class="bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden">
+                <div class="p-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+                    <h3 class="font-black text-black uppercase tracking-tight text-sm">Incident Queue</h3>
                 </div>
 
                 <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse min-w-[700px]">
+                    <table class="w-full text-left border-collapse min-w-[800px]">
                         <thead>
                             <tr class="bg-white">
-                                <th class="p-4 lg:p-6">Incident</th>
-                                <th class="p-4 lg:p-6">Student</th>
-                                <th class="p-4 lg:p-6">Contact</th>
-                                <th class="p-4 lg:p-6 text-center">Proof</th>
-                                <th class="p-4 lg:p-6">Action</th>
+                                <th class="p-6">Incident</th>
+                                <th class="p-6">Student Info</th>
+                                <th class="p-6">Contact Details</th>
+                                <th class="p-6 text-center">Proof</th>
+                                <th class="p-6">Action</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
                             {% for comp in complaints %}
-                            <tr class="hover:bg-slate-50/80 transition-colors {% if comp.status == 'Solved' %}opacity-50{% endif %}">
-                                <td class="p-4 lg:p-6">
-                                    <span class="text-xs font-black text-indigo-600 italic">#{{ comp.id }}</span>
-                                    <p class="text-[8px] text-slate-400 font-black uppercase mt-1">{{ comp.created_at|time_ago }}</p>
+                            <tr class="hover:bg-slate-50/50 transition-colors {% if comp.status == 'Solved' %}opacity-60{% endif %}">
+                                <td class="p-6">
+                                    <span class="text-xs font-black text-indigo-700 italic">#{{ comp.id }}</span>
+                                    <p class="text-[9px] text-slate-500 font-black uppercase mt-1">{{ comp.created_at|time_ago }}</p>
                                 </td>
-                                <td class="p-4 lg:p-6">
-                                    <p class="font-black text-black text-[11px] uppercase truncate max-w-[100px]">{{ comp.name }}</p>
-                                    <p class="text-[9px] text-slate-500 font-bold italic">{{ comp.roll_no }}</p>
+                                <td class="p-6">
+                                    <p class="font-black text-black text-[13px] lg:text-[14px] uppercase tracking-tight">{{ comp.name }}</p>
+                                    <p class="text-[10px] text-slate-600 font-extrabold italic">{{ comp.roll_no }}</p>
                                 </td>
-                                <td class="p-4 lg:p-6">
-                                    <p class="text-[9px] font-black text-black truncate max-w-[120px]">{{ comp.email }}</p>
-                                    <p class="text-[9px] font-bold text-slate-500">{{ comp.phone }}</p>
+                                <td class="p-6">
+                                    <p class="text-[10px] font-black text-black">{{ comp.email }}</p>
+                                    <p class="text-[10px] font-black text-slate-600">{{ comp.phone }}</p>
                                 </td>
-                                <td class="p-4 lg:p-6 text-center">
+                                <td class="p-6 text-center">
                                     {% if comp.image_file %}
-                                    <a href="{{ url_for('uploaded_file', filename=comp.image_file) }}" target="_blank" class="w-8 h-8 lg:w-10 lg:h-10 bg-slate-100 rounded-xl flex items-center justify-center hover:bg-sky-600 hover:text-white transition-all shadow-sm mx-auto">📸</a>
-                                    {% else %}
-                                    <span class="text-slate-300 text-[8px] font-bold italic">None</span>
+                                    <a href="{{ url_for('uploaded_file', filename=comp.image_file) }}" target="_blank" class="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center text-white hover:bg-sky-600 transition-all shadow-lg mx-auto">📸</a>
                                     {% endif %}
                                 </td>
-                                <td class="p-4 lg:p-6 min-w-[220px]">
+                                <td class="p-6 min-w-[240px]">
                                     <form action="/update_status/{{ comp.id }}" method="POST" class="space-y-2">
-                                        <input name="remark" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-[10px] font-bold outline-none focus:border-indigo-600 transition-all" placeholder="Reply..." value="{{ comp.admin_remark or '' }}">
+                                        <input name="remark" class="w-full p-2 bg-slate-50 border-2 border-slate-200 rounded-lg text-[10px] font-black text-black outline-none focus:border-indigo-600 transition-all" placeholder="Add remark..." value="{{ comp.admin_remark or '' }}">
                                         <div class="flex gap-1">
-                                            <button type="submit" class="flex-1 bg-black text-white text-[8px] font-black uppercase tracking-widest py-2 rounded-lg hover:bg-emerald-600 transition shadow-md">
+                                            <button type="submit" class="flex-1 bg-black text-white text-[9px] font-black uppercase py-2 rounded-lg hover:bg-emerald-600 shadow-md">
                                                 {% if comp.status == 'Pending' %}Start{% elif comp.status == 'In Processing' %}Solve{% else %}Done{% endif %}
                                             </button>
-                                            <button form="del-{{comp.id}}" type="submit" class="p-2 bg-rose-50 text-rose-600 rounded-lg hover:bg-rose-600 hover:text-white transition">🗑️</button>
+                                            <button form="del-{{comp.id}}" type="submit" class="p-2 bg-rose-100 text-rose-600 rounded-lg hover:bg-rose-600 hover:text-white transition shadow-sm">🗑️</button>
                                         </div>
                                     </form>
-                                    <form id="del-{{comp.id}}" action="/delete_complaint/{{ comp.id }}" method="POST" onsubmit="return confirm('Delete Permanently?');"></form>
+                                    <form id="del-{{comp.id}}" action="/delete_complaint/{{ comp.id }}" method="POST" onsubmit="return confirm('WARNING: Are you sure you want to delete this complaint permanently?');"></form>
                                 </td>
                             </tr>
                             {% else %}
-                            <tr><td colspan="5" class="p-10 text-center text-slate-400 font-black uppercase text-[10px] tracking-widest italic">The queue is empty</td></tr>
+                            <tr><td colspan="5" class="p-20 text-center text-slate-400 font-black uppercase text-xs tracking-widest italic">The system queue is currently empty</td></tr>
                             {% endfor %}
                         </tbody>
                     </table>
@@ -162,29 +151,27 @@
         </div>
     </div>
 
-    <div id="modal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="bg-white w-full max-w-sm lg:max-w-md rounded-[2rem] lg:rounded-[2.5rem] p-6 lg:p-10 shadow-2xl">
-            <div class="flex justify-between items-center mb-6 lg:mb-8">
-                <h3 class="text-base lg:text-xl font-black text-black uppercase italic">New Admin</h3>
-                <button onclick="toggleModal()" class="w-8 h-8 flex items-center justify-center bg-slate-100 rounded-full text-slate-500 font-black">X</button>
+    <div id="modal" class="hidden fixed inset-0 z-[60] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md rounded-[2.5rem] p-8 lg:p-10 shadow-2xl">
+            <div class="flex justify-between items-center mb-8">
+                <h3 class="text-xl font-black text-black uppercase italic">New Admin Access</h3>
+                <button onclick="toggleModal()" class="text-slate-400 font-black text-xl hover:text-black">✕</button>
             </div>
-            <form action="/add_new_admin" method="POST" class="space-y-3 lg:space-y-4">
-                <input type="text" name="admin_full_name" placeholder="Full Name" class="w-full p-3 lg:p-4 bg-slate-50 rounded-xl lg:rounded-2xl text-[11px] lg:text-sm font-bold border-none outline-none ring-1 ring-slate-100 focus:ring-2 ring-indigo-500" required>
-                <input type="text" name="admin_username" placeholder="Login ID" class="w-full p-3 lg:p-4 bg-slate-50 rounded-xl lg:rounded-2xl text-[11px] lg:text-sm font-bold border-none outline-none ring-1 ring-slate-100 focus:ring-2 ring-indigo-500" required>
-                <input type="email" name="admin_email" placeholder="Email" class="w-full p-3 lg:p-4 bg-slate-50 rounded-xl lg:rounded-2xl text-[11px] lg:text-sm font-bold border-none outline-none ring-1 ring-slate-100 focus:ring-2 ring-indigo-500" required>
-                <input type="text" name="admin_phone" placeholder="Phone" class="w-full p-3 lg:p-4 bg-slate-50 rounded-xl lg:rounded-2xl text-[11px] lg:text-sm font-bold border-none outline-none ring-1 ring-slate-100 focus:ring-2 ring-indigo-500" required>
-                <input type="password" name="admin_password" placeholder="Password" class="w-full p-3 lg:p-4 bg-slate-50 rounded-xl lg:rounded-2xl text-[11px] lg:text-sm font-bold border-none outline-none ring-1 ring-slate-100 focus:ring-2 ring-indigo-500" required>
-                <button type="submit" class="w-full py-3 lg:py-4 bg-black text-white font-black uppercase tracking-[0.2em] rounded-xl lg:rounded-2xl hover:bg-emerald-600 transition shadow-lg text-[9px] lg:text-[10px]">Authorize 🚀</button>
+            <form action="/add_new_admin" method="POST" class="space-y-4">
+                <input type="text" name="admin_full_name" placeholder="Full Name" class="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-sm font-black text-black outline-none focus:border-indigo-500" required>
+                <input type="text" name="admin_username" placeholder="Login ID" class="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-sm font-black text-black outline-none focus:border-indigo-500" required>
+                <input type="email" name="admin_email" placeholder="Email" class="w-full p-3 bg-slate-50 border-2 border-slate-100 rounded-2xl text-sm font-black text-black outline-none focus:border-indigo-500" required>
+                <input type="text" name="admin_phone" placeholder="Phone" class="w-full p-3 bg-slate-50 border-2 border-slate-100 rounded-2xl text-sm font-black text-black outline-none focus:border-indigo-500" required>
+                <input type="password" name="admin_password" placeholder="Password" class="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-sm font-black text-black outline-none focus:border-indigo-500" required>
+                <button type="submit" class="w-full py-4 bg-black text-white font-black uppercase tracking-[0.2em] rounded-2xl hover:bg-emerald-600 transition shadow-lg text-[10px]">Authorize 🚀</button>
             </form>
         </div>
     </div>
 
     <script>
         function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('overlay');
-            sidebar.classList.toggle('open');
-            overlay.classList.toggle('hidden');
+            document.getElementById('sidebar').classList.toggle('open');
+            document.getElementById('overlay').classList.toggle('hidden');
         }
         function toggleModal() {
             document.getElementById('modal').classList.toggle('hidden');

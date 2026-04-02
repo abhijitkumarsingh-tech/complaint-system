@@ -125,21 +125,16 @@ def add_new_admin():
     except: flash("Admin username already exists!", "error")
     return redirect(url_for('admin_panel'))
 
-# --- DELETE ADMIN ROUTE ---
 @app.route('/delete_admin/<int:admin_id>', methods=['POST'])
 def delete_admin(admin_id):
     if not session.get('is_admin'): return redirect(url_for('index'))
-    
-    # Safety Check: Apne aap ko delete nahi kar sakte
     if admin_id == session.get('user_id'):
-        flash("Action Denied: You cannot delete your own master account!", "error")
+        flash("Action Denied: Master account protection!", "error")
         return redirect(url_for('admin_panel'))
-    
     admin_to_del = User.query.get(admin_id)
-    if admin_to_del and admin_to_del.is_admin:
-        db.session.delete(admin_to_del)
-        db.session.commit()
-        flash("Admin access has been successfully revoked.", "success")
+    if admin_to_del:
+        db.session.delete(admin_to_del); db.session.commit()
+        flash("Admin Revoked", "success")
     return redirect(url_for('admin_panel'))
 
 @app.route('/add_complaint', methods=['POST'])
@@ -149,10 +144,8 @@ def add_complaint():
     if not file or file.filename == '':
         flash("Evidence photo is mandatory!", "error")
         return redirect(url_for('dashboard'))
-    
     fname = secure_filename(file.filename)
     file.save(os.path.join(app.config['UPLOAD_FOLDER'], fname))
-    
     new_c = Complaint(
         user_id=session['user_id'], 
         name=request.form.get('name'),
@@ -165,12 +158,21 @@ def add_complaint():
         image_file=fname
     )
     db.session.add(new_c); db.session.commit()
-    
     e_body = f"New Incident Reported by {new_c.name}\nCategory: {new_c.category}\nIssue: {new_c.text}"
     threading.Thread(target=send_email_async, args=(ADMIN_EMAIL_DEFAULT, "⚠️ New Campus Incident", e_body)).start()
-    
     flash("Report submitted successfully!", "success")
     return redirect(url_for('dashboard'))
+
+# --- FIXED DELETE COMPLAINT ROUTE ---
+@app.route('/delete_complaint/<int:id>', methods=['POST'])
+def delete_complaint(id):
+    if not session.get('is_admin'): return redirect(url_for('index'))
+    comp = Complaint.query.get(id)
+    if comp:
+        db.session.delete(comp)
+        db.session.commit()
+        flash(f"Complaint #{id} deleted successfully", "success")
+    return redirect(url_for('admin_panel'))
 
 @app.route('/dashboard')
 def dashboard():
@@ -187,7 +189,6 @@ def admin_panel():
         'solved': Complaint.query.filter_by(status='Solved').count()
     }
     all_comps = Complaint.query.order_by(Complaint.created_at.desc()).all()
-    # Fetching all admins to show in the Sidebar/Modal list
     all_admins = User.query.filter_by(is_admin=True).all()
     return render_template('admin.html', complaints=all_comps, stats=stats, admins=all_admins)
 
@@ -206,17 +207,30 @@ def update_status(id):
         db.session.commit()
     return redirect(url_for('admin_panel'))
 
+@app.route('/export_csv')
+def export_csv():
+    if not session.get('is_admin'): return redirect(url_for('index'))
+    all_complaints = Complaint.query.all()
+    si = StringIO()
+    cw = csv.writer(si)
+    cw.writerow(['ID', 'Name', 'Roll No', 'Category', 'Status', 'Date'])
+    for c in all_complaints:
+        cw.writerow([c.id, c.name, c.roll_no, c.category, c.status, c.created_at])
+    output = make_response(si.getvalue())
+    output.headers["Content-Disposition"] = "attachment; filename=campus_logs.csv"
+    output.headers["Content-type"] = "text/csv"
+    return output
+
 @app.route('/reset_database')
 def reset_database():
     db.drop_all(); db.create_all()
-    # Default master admin with full details
     admin = User(username='admin', password='adminpassword', full_name="Abhijit Kumar Singh", email=ADMIN_EMAIL_DEFAULT, is_admin=True)
     db.session.add(admin); db.session.commit()
     return "Database Ready"
 
 @app.route('/logout')
 def logout():
-    session.clear(); return redirect(url_for('index'))
+    session.clear(); return redirect(url_for('login'))
 
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):
