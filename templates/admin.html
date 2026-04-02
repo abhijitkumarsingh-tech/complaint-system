@@ -9,7 +9,8 @@
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
         .sidebar-gradient { background: #0f172a; }
-        th { color: #000000 !important; font-weight: 900 !important; font-size: 11px !important; border-bottom: 2px solid #cbd5e1 !important; text-transform: uppercase; letter-spacing: 0.1em; white-space: nowrap; }
+        /* Clean & Professional Header */
+        th { color: #ffffff !important; background: #111827 !important; font-weight: 700 !important; font-size: 11px !important; text-transform: uppercase; letter-spacing: 0.1em; border-right: 1px solid #374151; }
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
         @media (max-width: 1024px) {
@@ -32,26 +33,10 @@
         <nav class="space-y-2 flex-1">
             <a href="/admin" class="flex items-center gap-3 bg-white/10 p-3 rounded-xl font-bold text-xs uppercase tracking-widest text-white">📊 Overview</a>
             <a href="/export_csv" class="flex items-center gap-3 hover:bg-white/5 p-3 rounded-xl transition font-bold text-slate-400 text-xs uppercase tracking-widest">📥 Export Logs</a>
-            <button onclick="toggleModal()" class="w-full flex items-center gap-3 bg-emerald-600/20 text-emerald-400 p-3 rounded-xl transition font-black text-[10px] uppercase tracking-widest mt-6 border border-emerald-500/30">👤 + New Admin Access</button>
-            <div class="mt-8 space-y-4">
-                <p class="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] px-2">Manage Admins</p>
-                <div class="space-y-2 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
-                    {% for admin in admins %}
-                    <div class="flex items-center justify-between bg-white/5 p-3 rounded-xl group border border-white/5">
-                        <div class="truncate">
-                            <p class="text-[10px] font-bold text-white truncate">{{ admin.full_name }}</p>
-                            <p class="text-[8px] text-slate-500 italic">ID: {{ admin.username }}</p>
-                        </div>
-                        <form action="/delete_admin/{{ admin.id }}" method="POST" onsubmit="return confirm('Revoke Access?');">
-                            <button type="submit" class="text-rose-500 p-1 hover:bg-rose-500/10 rounded">🗑️</button>
-                        </form>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
+            <button onclick="toggleModal()" class="w-full flex items-center gap-3 bg-emerald-600/20 text-emerald-400 p-3 rounded-xl transition font-black text-[10px] uppercase tracking-widest mt-6 border border-emerald-500/30">👤 + New Admin</button>
         </nav>
         <div class="mt-auto pt-6 border-t border-slate-700">
-            <a href="/logout" class="text-rose-400 font-black text-xs uppercase tracking-widest">Logout</a>
+            <a href="/logout" class="text-rose-400 font-black text-xs uppercase tracking-widest hover:text-rose-300">Logout</a>
         </div>
     </aside>
 
@@ -60,88 +45,88 @@
             <h2 class="text-sm lg:text-lg font-black text-black uppercase italic tracking-tighter">Control Center</h2>
             <div class="flex items-center gap-3">
                 <div class="text-right hidden sm:block">
-                    <p class="text-[9px] font-black text-emerald-600 uppercase">Master Admin</p>
-                    <p class="text-sm font-black text-black">{{ session.full_name or 'Abhijit' }}</p>
+                    <p class="text-[9px] font-black text-emerald-600 uppercase">Master Access</p>
+                    <p class="text-sm font-black text-black">{{ session.full_name or 'Abhijit Singh' }}</p>
                 </div>
                 <div class="w-10 h-10 bg-black rounded-xl flex items-center justify-center text-white font-black text-sm border-2 border-slate-200">A</div>
             </div>
         </header>
 
         <div class="p-4 lg:p-8 max-w-7xl mx-auto">
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-                <div class="bg-black p-6 rounded-2xl shadow-xl text-white">
-                    <p class="text-[10px] font-black text-slate-400 uppercase">Total Cases</p>
-                    <h3 class="text-3xl font-black">{{ stats.total }}</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
+                <div class="bg-white p-6 rounded-2xl border-2 border-slate-200 shadow-sm">
+                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Reports</p>
+                    <h3 class="text-3xl font-black text-black">{{ stats.total }}</h3>
                 </div>
-                <div class="bg-white p-6 rounded-2xl border-4 border-amber-400 shadow-xl">
-                    <p class="text-[10px] font-black text-slate-400 uppercase">In Progress</p>
+                <div class="bg-white p-6 rounded-2xl border-2 border-slate-200 border-l-8 border-amber-400 shadow-sm">
+                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Ongoing</p>
                     <h3 class="text-3xl font-black text-black">{{ stats.pending }}</h3>
                 </div>
-                <div class="bg-white p-6 rounded-2xl border-4 border-emerald-500 shadow-xl">
-                    <p class="text-[10px] font-black text-slate-400 uppercase">Resolved</p>
+                <div class="bg-white p-6 rounded-2xl border-2 border-slate-200 border-l-8 border-emerald-500 shadow-sm">
+                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Resolved</p>
                     <h3 class="text-3xl font-black text-black">{{ stats.solved }}</h3>
                 </div>
             </div>
 
-            <div class="bg-white rounded-[2rem] border-2 border-slate-200 shadow-2xl overflow-hidden">
+            <div class="bg-white rounded-xl border-2 border-slate-200 shadow-sm overflow-hidden">
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse min-w-[1000px]">
                         <thead>
-                            <tr class="bg-slate-50">
-                                <th class="p-6">Complaint Info</th>
-                                <th class="p-6">Student Details</th>
-                                <th class="p-6">Type & Urgency</th>
-                                <th class="p-6 text-center">Proof</th>
-                                <th class="p-6">Admin Action</th>
+                            <tr>
+                                <th class="p-4">Case #</th>
+                                <th class="p-4">Student Profile</th>
+                                <th class="p-4">Contact</th>
+                                <th class="p-4">Type & Urgency</th>
+                                <th class="p-4 text-center">Proof</th>
+                                <th class="p-4">Admin Action</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y-2 divide-slate-100">
+                        <tbody class="divide-y divide-slate-200">
                             {% for comp in complaints %}
-                            <tr class="hover:bg-slate-50/80 transition-all {% if comp.status == 'Solved' %}bg-emerald-50/30{% endif %}">
-                                <td class="p-6">
-                                    <div class="bg-indigo-600 text-white w-fit px-3 py-1 rounded-lg text-xs font-black mb-2 italic shadow-md">#{{ comp.id }}</div>
-                                    <p class="text-[10px] text-black font-black uppercase tracking-widest">{{ comp.created_at|time_ago }}</p>
+                            <tr class="hover:bg-slate-50 transition-colors">
+                                <td class="p-4 align-top">
+                                    <div class="text-xs font-black text-black">CASE #{{ comp.id }}</div>
+                                    <p class="text-[9px] text-slate-400 font-bold uppercase mt-1">{{ comp.created_at|time_ago }}</p>
                                 </td>
 
-                                <td class="p-6">
-                                    <div class="p-3 bg-slate-900 rounded-xl shadow-lg border border-slate-700 min-w-[180px]">
-                                        <p class="text-white font-black text-sm uppercase tracking-tight mb-1">{{ comp.name }}</p>
-                                        <p class="text-sky-400 font-black text-[11px] italic underline">{{ comp.roll_no }}</p>
-                                    </div>
-                                    <div class="mt-2 text-[10px] font-bold text-slate-500 px-1 truncate w-40">{{ comp.email }}</div>
-                                </td>
-
-                                <td class="p-6">
-                                    <div class="flex flex-col gap-2">
-                                        <div class="bg-slate-100 border-2 border-slate-300 p-2 rounded-lg text-center">
-                                            <p class="text-[9px] font-black text-slate-400 uppercase leading-none mb-1">Category</p>
-                                            <p class="text-xs font-black text-black uppercase">{{ comp.category }}</p>
-                                        </div>
-                                        <div class="p-2 rounded-lg text-center border-2 {% if comp.priority == 'High' %}bg-rose-50 border-rose-500 text-rose-600{% else %}bg-amber-50 border-amber-400 text-amber-600{% endif %}">
-                                            <p class="text-[9px] font-black opacity-60 uppercase leading-none mb-1">Priority</p>
-                                            <p class="text-xs font-black uppercase">{{ comp.priority }}</p>
-                                        </div>
+                                <td class="p-4 align-top">
+                                    <div class="p-3 bg-white border-2 border-slate-100 rounded-xl shadow-sm">
+                                        <p class="text-black font-black text-xs uppercase tracking-tight">{{ comp.name }}</p>
+                                        <p class="text-indigo-600 font-bold text-[10px] mt-1 italic">{{ comp.roll_no }}</p>
                                     </div>
                                 </td>
 
-                                <td class="p-6 text-center">
+                                <td class="p-4 align-top">
+                                    <div class="p-3 bg-white border-2 border-slate-100 rounded-xl shadow-sm">
+                                        <p class="text-slate-600 font-bold text-[10px] truncate w-32">{{ comp.email }}</p>
+                                        <p class="text-black font-black text-[11px] mt-1">{{ comp.phone }}</p>
+                                    </div>
+                                </td>
+
+                                <td class="p-4 align-top">
+                                    <div class="flex flex-col gap-1.5">
+                                        <span class="bg-slate-100 text-slate-600 px-2 py-1 rounded text-[9px] font-black uppercase w-fit">{{ comp.category }}</span>
+                                        <span class="{% if comp.priority == 'High' %}bg-rose-50 text-rose-600 border-rose-200{% else %}bg-amber-50 text-amber-600 border-amber-200{% endif %} border px-2 py-1 rounded text-[9px] font-black uppercase w-fit">{{ comp.priority }}</span>
+                                    </div>
+                                </td>
+
+                                <td class="p-4 text-center align-top">
                                     {% if comp.image_file %}
-                                    <a href="{{ url_for('uploaded_file', filename=comp.image_file) }}" target="_blank" class="w-12 h-12 bg-black rounded-2xl flex items-center justify-center text-white hover:scale-110 transition-transform shadow-xl mx-auto border-2 border-slate-200">📸</a>
+                                    <a href="{{ url_for('uploaded_file', filename=comp.image_file) }}" target="_blank" class="w-10 h-10 bg-slate-100 border border-slate-200 rounded-xl flex items-center justify-center hover:bg-black hover:text-white transition-all mx-auto shadow-sm text-lg">📸</a>
                                     {% endif %}
                                 </td>
 
-                                <td class="p-6 min-w-[300px]">
-                                    <div class="bg-slate-50 p-3 rounded-2xl border-2 border-slate-200 mb-3">
-                                        <p class="text-[9px] font-black text-indigo-600 uppercase mb-1 italic">Complaint Issue:</p>
-                                        <p class="text-[11px] font-bold text-slate-800 leading-tight">{{ comp.text }}</p>
+                                <td class="p-4 min-w-[320px]">
+                                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 mb-3 shadow-inner">
+                                        <p class="text-[11px] font-bold text-slate-700 leading-tight">{{ comp.text }}</p>
                                     </div>
                                     <form action="/update_status/{{ comp.id }}" method="POST" class="space-y-2">
-                                        <textarea name="remark" class="w-full p-3 bg-white border-2 border-slate-200 rounded-xl text-[10px] font-black text-black outline-none focus:border-black transition-all" placeholder="Write reply..." rows="2">{{ comp.admin_remark or '' }}</textarea>
+                                        <input name="remark" class="w-full p-2.5 bg-white border-2 border-slate-200 rounded-lg text-[10px] font-black outline-none focus:border-black" placeholder="Enter status update..." value="{{ comp.admin_remark or '' }}">
                                         <div class="flex gap-2">
-                                            <button type="submit" class="flex-1 bg-black text-white text-[10px] font-black uppercase py-3 rounded-xl hover:bg-emerald-600 transition shadow-lg">
-                                                {% if comp.status == 'Pending' %}Start Work{% elif comp.status == 'In Processing' %}Resolve Now{% else %}Solved ✓{% endif %}
+                                            <button type="submit" class="flex-1 bg-black text-white text-[10px] font-black uppercase py-2.5 rounded-lg hover:bg-indigo-600 transition shadow-sm">
+                                                {% if comp.status == 'Pending' %}Process{% elif comp.status == 'In Processing' %}Resolve{% else %}Closed ✓{% endif %}
                                             </button>
-                                            <button form="del-{{comp.id}}" type="submit" class="p-3 bg-rose-50 text-rose-600 rounded-xl hover:bg-rose-600 hover:text-white transition shadow-md border border-rose-200">🗑️</button>
+                                            <button form="del-{{comp.id}}" type="submit" class="p-2.5 bg-rose-50 text-rose-600 rounded-lg border border-rose-100 hover:bg-rose-600 hover:text-white transition">🗑️</button>
                                         </div>
                                     </form>
                                     <form id="del-{{comp.id}}" action="/delete_complaint/{{ comp.id }}" method="POST" onsubmit="return confirm('Delete permanently?');"></form>
@@ -155,17 +140,17 @@
         </div>
     </div>
 
-    <div id="modal" class="hidden fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-        <div class="bg-white w-full max-w-md rounded-[2.5rem] p-10 shadow-2xl border-t-8 border-indigo-600">
-            <div class="flex justify-between items-center mb-8">
-                <h3 class="text-xl font-black text-black uppercase italic tracking-tighter">Add New Admin</h3>
+    <div id="modal" class="hidden fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md rounded-2xl p-8 shadow-2xl border-4 border-black">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-black text-black uppercase tracking-tighter italic">New Access</h3>
                 <button onclick="toggleModal()" class="text-slate-400 font-black text-2xl hover:text-black">✕</button>
             </div>
             <form action="/add_new_admin" method="POST" class="space-y-4">
-                <input type="text" name="admin_full_name" placeholder="FULL NAME" class="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-xs font-black text-black outline-none focus:border-indigo-600" required>
-                <input type="text" name="admin_username" placeholder="LOGIN ID" class="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-xs font-black text-black outline-none focus:border-indigo-600" required>
-                <input type="password" name="admin_password" placeholder="PASSWORD" class="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-xs font-black text-black outline-none focus:border-indigo-600" required>
-                <button type="submit" class="w-full py-4 bg-black text-white font-black uppercase tracking-[0.2em] rounded-2xl hover:bg-emerald-600 transition shadow-xl text-xs">Authorize Access 🚀</button>
+                <input type="text" name="admin_full_name" placeholder="Name" class="w-full p-4 bg-slate-50 border-2 border-slate-200 rounded-lg text-xs font-black outline-none" required>
+                <input type="text" name="admin_username" placeholder="Login ID" class="w-full p-4 bg-slate-50 border-2 border-slate-200 rounded-lg text-xs font-black outline-none" required>
+                <input type="password" name="admin_password" placeholder="Password" class="w-full p-4 bg-slate-50 border-2 border-slate-200 rounded-lg text-xs font-black outline-none" required>
+                <button type="submit" class="w-full py-4 bg-black text-white font-black uppercase tracking-widest rounded-lg hover:bg-indigo-600 transition shadow-lg">Grant Access</button>
             </form>
         </div>
     </div>
