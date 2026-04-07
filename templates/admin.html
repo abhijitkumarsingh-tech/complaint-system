@@ -9,7 +9,6 @@
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
         .sidebar-gradient { background: #0f172a; }
-        /* Clean & Professional Header */
         th { color: #ffffff !important; background: #111827 !important; font-weight: 700 !important; font-size: 11px !important; text-transform: uppercase; letter-spacing: 0.1em; border-right: 1px solid #374151; }
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
@@ -31,9 +30,28 @@
     <aside id="sidebar" class="fixed lg:sticky top-0 left-0 w-64 sidebar-gradient h-screen p-6 text-white shadow-2xl flex flex-col z-50 lg:translate-x-0">
         <h1 class="text-2xl font-black tracking-tighter italic mb-10 text-white hidden lg:block">ADMIN<span class="text-sky-400">HQ</span></h1>
         <nav class="space-y-2 flex-1">
-            <a href="/admin" class="flex items-center gap-3 bg-white/10 p-3 rounded-xl font-bold text-xs uppercase tracking-widest text-white"> Overview</a>
-            <a href="/export_csv" class="flex items-center gap-3 hover:bg-white/5 p-3 rounded-xl transition font-bold text-slate-400 text-xs uppercase tracking-widest"> Export Logs</a>
-            <button onclick="toggleModal()" class="w-full flex items-center gap-3 bg-emerald-600/20 text-emerald-400 p-3 rounded-xl transition font-black text-[10px] uppercase tracking-widest mt-6 border border-emerald-500/30"> + New Admin</button>
+            <a href="/admin" class="flex items-center gap-3 bg-white/10 p-3 rounded-xl font-bold text-xs uppercase tracking-widest text-white">📊 Overview</a>
+            <a href="/export_csv" class="flex items-center gap-3 hover:bg-white/5 p-3 rounded-xl transition font-bold text-slate-400 text-xs uppercase tracking-widest">📥 Export Logs</a>
+            <button onclick="toggleModal()" class="w-full flex items-center gap-3 bg-emerald-600/20 text-emerald-400 p-3 rounded-xl transition font-black text-[10px] uppercase tracking-widest mt-6 border border-emerald-500/30">👤 + New Admin</button>
+
+            <div class="mt-8 space-y-4">
+                <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest px-2">Active Admins</p>
+                <div class="space-y-2 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
+                    {% for admin in admins %}
+                    <div class="flex items-center justify-between bg-white/5 p-3 rounded-xl border border-white/5">
+                        <div class="truncate">
+                            <p class="text-[10px] font-bold text-white truncate">{{ admin.full_name }}</p>
+                            <p class="text-[8px] text-slate-500 italic">ID: {{ admin.username }}</p>
+                        </div>
+                        {% if admin.username != 'admin' %}
+                        <form action="/delete_admin/{{ admin.id }}" method="POST" onsubmit="return confirm('Revoke this admin access?');">
+                            <button type="submit" class="text-rose-500 p-1 hover:bg-rose-500/10 rounded">🗑️</button>
+                        </form>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
         </nav>
         <div class="mt-auto pt-6 border-t border-slate-700">
             <a href="/logout" class="text-rose-400 font-black text-xs uppercase tracking-widest hover:text-rose-300">Logout</a>
@@ -45,7 +63,7 @@
             <h2 class="text-sm lg:text-lg font-black text-black uppercase italic tracking-tighter">Control Center</h2>
             <div class="flex items-center gap-3">
                 <div class="text-right hidden sm:block">
-                    <p class="text-[9px] font-black text-emerald-600 uppercase">Master Access</p>
+                    <p class="text-[9px] font-black text-emerald-600 uppercase italic">Master Access</p>
                     <p class="text-sm font-black text-black">{{ session.full_name or 'Abhijit Singh' }}</p>
                 </div>
                 <div class="w-10 h-10 bg-black rounded-xl flex items-center justify-center text-white font-black text-sm border-2 border-slate-200">A</div>
@@ -63,7 +81,7 @@
                     <h3 class="text-3xl font-black text-black">{{ stats.pending }}</h3>
                 </div>
                 <div class="bg-white p-6 rounded-2xl border-2 border-slate-200 border-l-8 border-emerald-500 shadow-sm">
-                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">solved</p>
+                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Resolved</p>
                     <h3 class="text-3xl font-black text-black">{{ stats.solved }}</h3>
                 </div>
             </div>
@@ -74,7 +92,7 @@
                         <thead>
                             <tr>
                                 <th class="p-4">Case #</th>
-                                <th class="p-4">Student Profile</th>
+                                <th class="p-4">Student Info</th>
                                 <th class="p-4">Contact</th>
                                 <th class="p-4">Type & Urgency</th>
                                 <th class="p-4 text-center">Proof</th>
@@ -112,21 +130,21 @@
 
                                 <td class="p-4 text-center align-top">
                                     {% if comp.image_file %}
-                                    <a href="{{ url_for('uploaded_file', filename=comp.image_file) }}" target="_blank" class="w-10 h-10 bg-slate-100 border border-slate-200 rounded-xl flex items-center justify-center hover:bg-black hover:text-white transition-all mx-auto shadow-sm text-lg"> </a>
+                                    <a href="{{ url_for('uploaded_file', filename=comp.image_file) }}" target="_blank" class="w-10 h-10 bg-slate-100 border border-slate-200 rounded-xl flex items-center justify-center hover:bg-black hover:text-white transition-all mx-auto shadow-sm text-lg">📸</a>
                                     {% endif %}
                                 </td>
 
                                 <td class="p-4 min-w-[320px]">
-                                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 mb-3 shadow-inner">
+                                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 mb-3">
                                         <p class="text-[11px] font-bold text-slate-700 leading-tight">{{ comp.text }}</p>
                                     </div>
                                     <form action="/update_status/{{ comp.id }}" method="POST" class="space-y-2">
-                                        <input name="remark" class="w-full p-2.5 bg-white border-2 border-slate-200 rounded-lg text-[10px] font-black outline-none focus:border-black" placeholder="Enter status update..." value="{{ comp.admin_remark or '' }}">
+                                        <input name="remark" class="w-full p-2.5 bg-white border-2 border-slate-200 rounded-lg text-[10px] font-black outline-none focus:border-black" placeholder="Status Remark..." value="{{ comp.admin_remark or '' }}">
                                         <div class="flex gap-2">
                                             <button type="submit" class="flex-1 bg-black text-white text-[10px] font-black uppercase py-2.5 rounded-lg hover:bg-indigo-600 transition shadow-sm">
-                                                {% if comp.status == 'Pending' %} In Process{% elif comp.status == 'In Processing' %}Solve{% else %}Solved ✓{% endif %}
+                                                {% if comp.status == 'Pending' %} Process{% elif comp.status == 'In Processing' %}Solve{% else %}Done ✓{% endif %}
                                             </button>
-                                            <button form="del-{{comp.id}}" type="submit" class="p-2.5 bg-rose-50 text-rose-600 rounded-lg border border-rose-100 hover:bg-rose-600 hover:text-white transition">DELETE_COMPLAINT </button>
+                                            <button form="del-{{comp.id}}" type="submit" class="p-2.5 bg-rose-50 text-rose-600 rounded-lg border border-rose-100 hover:bg-rose-600 hover:text-white transition shadow-sm">🗑️</button>
                                         </div>
                                     </form>
                                     <form id="del-{{comp.id}}" action="/delete_complaint/{{ comp.id }}" method="POST" onsubmit="return confirm('Delete permanently?');"></form>
@@ -143,14 +161,14 @@
     <div id="modal" class="hidden fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="bg-white w-full max-w-md rounded-2xl p-8 shadow-2xl border-4 border-black">
             <div class="flex justify-between items-center mb-6">
-                <h3 class="text-xl font-black text-black uppercase tracking-tighter italic">New Access</h3>
+                <h3 class="text-xl font-black text-black uppercase tracking-tighter italic">Create Admin</h3>
                 <button onclick="toggleModal()" class="text-slate-400 font-black text-2xl hover:text-black">✕</button>
             </div>
             <form action="/add_new_admin" method="POST" class="space-y-4">
-                <input type="text" name="admin_full_name" placeholder="Name" class="w-full p-4 bg-slate-50 border-2 border-slate-200 rounded-lg text-xs font-black outline-none" required>
+                <input type="text" name="admin_full_name" placeholder="Full Name" class="w-full p-4 bg-slate-50 border-2 border-slate-200 rounded-lg text-xs font-black outline-none" required>
                 <input type="text" name="admin_username" placeholder="Login ID" class="w-full p-4 bg-slate-50 border-2 border-slate-200 rounded-lg text-xs font-black outline-none" required>
                 <input type="password" name="admin_password" placeholder="Password" class="w-full p-4 bg-slate-50 border-2 border-slate-200 rounded-lg text-xs font-black outline-none" required>
-                <button type="submit" class="w-full py-4 bg-black text-white font-black uppercase tracking-widest rounded-lg hover:bg-indigo-600 transition shadow-lg">Grant Access</button>
+                <button type="submit" class="w-full py-4 bg-black text-white font-black uppercase tracking-widest rounded-lg hover:bg-indigo-600 transition shadow-lg">Confirm Access</button>
             </form>
         </div>
     </div>

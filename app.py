@@ -13,7 +13,7 @@ app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
 
 # --- CONFIGURATION ---
 ADMIN_EMAIL_DEFAULT = "abhijitkumarsingh74@gmail.com"  
-EMAIL_PASSWORD = "pevo azcr dbfa armb"          
+EMAIL_PASSWORD = "duoj jfam rucl nute"          
 UPLOAD_FOLDER = 'uploads'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 if not os.path.exists(UPLOAD_FOLDER):
@@ -51,7 +51,7 @@ class Complaint(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 # --- HELPERS ---
-def send_email_async(to_email, subject, body):
+def send_email_direct(to_email, subject, body):
     try:
         msg = MIMEMultipart()
         msg['From'] = ADMIN_EMAIL_DEFAULT
@@ -63,7 +63,10 @@ def send_email_async(to_email, subject, body):
         server.login(ADMIN_EMAIL_DEFAULT, EMAIL_PASSWORD)
         server.sendmail(ADMIN_EMAIL_DEFAULT, to_email, msg.as_string())
         server.quit()
-    except Exception as e: print(f"Email Error: {e}")
+        return True
+    except Exception as e: 
+        print(f"Email Error: {e}")
+        return False
 
 @app.template_filter('time_ago')
 def time_ago_filter(dt):
@@ -78,6 +81,8 @@ def time_ago_filter(dt):
 # --- ROUTES ---
 @app.route('/')
 def index():
+    if 'user_id' in session:
+        return redirect(url_for('admin_panel' if session.get('is_admin') else 'dashboard'))
     return render_template('login.html')
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -121,20 +126,20 @@ def add_new_admin():
     try:
         admin_user = User(username=new_u, password=new_p, full_name=new_n, email=new_e, phone=new_ph, is_admin=True)
         db.session.add(admin_user); db.session.commit()
-        flash(f"New Admin {new_n} added!", "success")
-    except: flash("Error adding admin", "error")
+        flash(f"New Admin {new_n} added successfully!", "success")
+    except: flash("Error adding admin. Username might exist.", "error")
     return redirect(url_for('admin_panel'))
 
 @app.route('/delete_admin/<int:admin_id>', methods=['POST'])
 def delete_admin(admin_id):
     if not session.get('is_admin'): return redirect(url_for('index'))
     if admin_id == session.get('user_id'):
-        flash("Cannot delete master account!", "error")
+        flash("Cannot delete your own master account!", "error")
         return redirect(url_for('admin_panel'))
     admin_to_del = User.query.get(admin_id)
     if admin_to_del:
         db.session.delete(admin_to_del); db.session.commit()
-        flash("Admin Revoked", "success")
+        flash("Admin access revoked.", "success")
     return redirect(url_for('admin_panel'))
 
 @app.route('/add_complaint', methods=['POST'])
@@ -142,12 +147,11 @@ def add_complaint():
     if 'user_id' not in session: return redirect(url_for('index'))
     file = request.files.get('photo')
     if not file or file.filename == '':
-        flash("Photo is mandatory!", "error")
+        flash("Evidence photo is mandatory!", "error")
         return redirect(url_for('dashboard'))
     fname = secure_filename(file.filename)
     file.save(os.path.join(app.config['UPLOAD_FOLDER'], fname))
     
-    # Yahan student apna naam bhar sakta hai
     new_c = Complaint(
         user_id=session['user_id'], 
         name=request.form.get('name'), 
@@ -160,9 +164,12 @@ def add_complaint():
         image_file=fname
     )
     db.session.add(new_c); db.session.commit()
-    e_body = f"New Incident by {new_c.name}\nCategory: {new_c.category}\nPriority: {new_c.priority}\n\nIssue: {new_c.text}"
-    threading.Thread(target=send_email_async, args=(ADMIN_EMAIL_DEFAULT, " New Campus Incident", e_body)).start()
-    flash("Report submitted!", "success")
+    
+    # Send Notification Email
+    e_body = f"New Incident by {new_c.name}\nCategory: {new_c.category}\nIssue: {new_c.text}"
+    send_email_direct(ADMIN_EMAIL_DEFAULT, "⚠️ New Campus Incident", e_body)
+    
+    flash("Report submitted successfully!", "success")
     return redirect(url_for('dashboard'))
 
 @app.route('/delete_complaint/<int:id>', methods=['POST'])
@@ -203,7 +210,7 @@ def update_status(id):
         elif comp.status == 'In Processing': 
             comp.status, comp.progress = 'Solved', 100
             s_body = f"Hello {comp.name},\nYour issue ({comp.category}) is SOLVED.\nRemark: {comp.admin_remark}"
-            threading.Thread(target=send_email_async, args=(comp.email, "Status Update: Solved", s_body)).start()
+            send_email_direct(comp.email, "Status Update: Solved", s_body)
         db.session.commit()
     return redirect(url_for('admin_panel'))
 
@@ -226,7 +233,7 @@ def reset_database():
     db.drop_all(); db.create_all()
     admin = User(username='admin', password='adminpassword', full_name="Abhijit Kumar Singh", email=ADMIN_EMAIL_DEFAULT, is_admin=True)
     db.session.add(admin); db.session.commit()
-    return "Database Ready"
+    return "Database Ready - Master Admin Created"
 
 @app.route('/logout')
 def logout():
