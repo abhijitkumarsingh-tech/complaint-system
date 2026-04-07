@@ -161,7 +161,7 @@ def add_complaint():
     )
     db.session.add(new_c); db.session.commit()
     e_body = f"New Incident by {new_c.name}\nCategory: {new_c.category}\nPriority: {new_c.priority}\n\nIssue: {new_c.text}"
-    threading.Thread(target=send_email_async, args=(ADMIN_EMAIL_DEFAULT, "⚠️ New Campus Incident", e_body)).start()
+    threading.Thread(target=send_email_async, args=(ADMIN_EMAIL_DEFAULT, " New Campus Incident", e_body)).start()
     flash("Report submitted!", "success")
     return redirect(url_for('dashboard'))
 
