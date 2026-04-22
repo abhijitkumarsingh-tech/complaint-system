@@ -5,63 +5,82 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <title>Join Portal | Student Registration</title>
+    <title>Registration Portal | Campus Support</title>
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
         .glass-card { 
             background: #ffffff; 
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1);
-            border-top: 8px solid #10b981; 
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+            border-top: 12px solid #10b981; 
+            border: 2px solid #000000;
         }
-        .dark-label { color: #000000 !important; font-weight: 800; }
+        .dark-label { color: #000000 !important; font-weight: 900; text-transform: uppercase; font-size: 11px; letter-spacing: 0.1em; }
+        .code-box { background: #f0fdf4; border: 3px dashed #10b981; }
+        .input-active:focus { border-color: #000000; box-shadow: 4px 4px 0px 0px rgba(16, 185, 129, 0.2); }
     </style>
 </head>
 <body class="bg-[#f0fdf4] flex items-center justify-center min-h-screen p-4">
 
-    <div class="glass-card w-full max-w-[420px] rounded-[2.5rem] p-10 transition-all duration-500 hover:shadow-2xl">
+    <div class="glass-card w-full max-w-[450px] rounded-[2.5rem] p-8 lg:p-12 transition-all duration-500 hover:shadow-2xl">
         
-        <header class="text-center mb-10">
-            <h1 class="text-[10px] font-black text-emerald-600 uppercase tracking-[0.4em] mb-2 italic">New Account</h1>
+        <header class="text-center mb-8">
+            <h1 class="text-[10px] font-black text-emerald-600 uppercase tracking-[0.4em] mb-2 italic">Account Authorization</h1>
             <h2 class="text-3xl font-black text-black tracking-tight italic uppercase">Student Register</h2>
         </header>
 
         {% with messages = get_flashed_messages(with_categories=true) %}
           {% if messages %}{% for cat, msg in messages %}
-            <div class="mb-6 p-4 rounded-2xl bg-rose-50 text-rose-600 text-sm font-black border border-rose-100 text-center uppercase tracking-tighter">
+            <div class="mb-6 p-4 rounded-2xl {% if cat == 'error' %}bg-rose-600 text-white{% else %}bg-emerald-600 text-white{% endif %} text-xs font-black border-2 border-black/10 text-center uppercase tracking-tighter shadow-md">
                 {{ msg }}
             </div>
           {% endfor %}{% endif %}
         {% endwith %}
 
         <form action="/register" method="POST" class="space-y-5">
-            <input type="hidden" name="role" value="Student">
             
             <div class="space-y-1">
-                <label class="text-[11px] dark-label uppercase tracking-widest ml-1">Official Email</label>
-                <input type="email" name="email" placeholder="example@gmail.com" class="w-full p-4 bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 focus:bg-white rounded-2xl text-sm font-bold transition-all outline-none text-black" required>
+                <label class="dark-label ml-1">Full Legal Identity</label>
+                <input type="text" name="full_name" placeholder="Enter Full Name" class="w-full p-4 bg-slate-50 border-2 border-slate-200 focus:border-emerald-500 focus:bg-white rounded-2xl text-sm font-black transition-all outline-none text-black uppercase input-active" required>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-1">
+                    <label class="dark-label ml-1">Username ID</label>
+                    <input type="text" name="username" placeholder="Unique ID" class="w-full p-4 bg-slate-50 border-2 border-slate-200 focus:border-emerald-500 focus:bg-white rounded-2xl text-sm font-black transition-all outline-none text-black input-active" required>
+                </div>
+                <div class="space-y-1">
+                    <label class="dark-label ml-1">Mobile Contact</label>
+                    <input type="text" name="phone" placeholder="10 Digits" class="w-full p-4 bg-slate-50 border-2 border-slate-200 focus:border-emerald-500 focus:bg-white rounded-2xl text-sm font-black transition-all outline-none text-black input-active" required>
+                </div>
             </div>
 
             <div class="space-y-1">
-                <label class="text-[11px] dark-label uppercase tracking-widest ml-1">Choose Username</label>
-                <input type="text" name="username" placeholder="Choose unique ID" class="w-full p-4 bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 focus:bg-white rounded-2xl text-sm font-bold transition-all outline-none text-black" required>
+                <label class="dark-label ml-1">Academic Email</label>
+                <input type="email" name="email" placeholder="example@campus.edu" class="w-full p-4 bg-slate-50 border-2 border-slate-200 focus:border-emerald-500 focus:bg-white rounded-2xl text-sm font-black transition-all outline-none text-black input-active" required>
             </div>
-            
+
+            <div class="p-5 rounded-3xl code-box space-y-3">
+                <label class="text-[11px] font-black text-emerald-800 uppercase tracking-widest ml-1">Campus Secret Code</label>
+                <input type="text" name="secret_code" placeholder="Enter Official Code" class="w-full p-4 bg-white border-2 border-emerald-300 focus:border-emerald-600 rounded-xl text-sm font-black transition-all outline-none text-emerald-700 uppercase" required>
+                <p class="text-[9px] text-emerald-600 font-black uppercase tracking-tighter">* Code required from the Administration Office</p>
+            </div>
+
             <div class="space-y-1">
-                <label class="text-[11px] dark-label uppercase tracking-widest ml-1">Create Password</label>
+                <label class="dark-label ml-1">Security Password</label>
                 <div class="relative">
-                    <input type="password" name="password" id="regPass" placeholder="••••••••" class="w-full p-4 bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 focus:bg-white rounded-2xl text-sm font-bold transition-all outline-none text-black" required>
-                    <button type="button" id="regEyeBtn" class="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-emerald-600 uppercase tracking-tighter">Show</button>
+                    <input type="password" name="password" id="regPass" placeholder="••••••••" class="w-full p-4 bg-slate-50 border-2 border-slate-200 focus:border-emerald-500 focus:bg-white rounded-2xl text-sm font-black transition-all outline-none text-black input-active" required>
+                    <button type="button" id="regEyeBtn" class="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-emerald-600 hover:text-black uppercase tracking-widest">View</button>
                 </div>
             </div>
             
-            <button type="submit" class="w-full py-4 bg-black text-white font-black rounded-2xl shadow-lg shadow-emerald-100 hover:bg-emerald-600 transition-all duration-300 active:scale-95 uppercase tracking-widest text-xs">
-                Register Account 
+            <button type="submit" class="w-full py-5 bg-black text-white font-black rounded-2xl shadow-xl hover:bg-emerald-600 transition-all duration-300 active:scale-95 uppercase tracking-[0.2em] text-xs mt-4">
+                Request System Access
             </button>
         </form>
         
-        <div class="mt-8 text-center border-t border-slate-100 pt-6">
-            <p class="text-sm font-bold text-slate-500">
-                Already registered? <a href="/" class="text-emerald-600 font-black hover:underline decoration-2">Log in here</a>
+        <div class="mt-8 text-center border-t-2 border-slate-100 pt-6">
+            <p class="text-sm font-black text-slate-500 uppercase tracking-tighter">
+                Already registered? <a href="/" class="text-emerald-600 font-black hover:underline decoration-2">Return to Login</a>
             </p>
         </div>
     </div>
@@ -72,7 +91,7 @@
         regEyeBtn.addEventListener('click', () => {
             const isPass = regPassField.type === 'password';
             regPassField.type = isPass ? 'text' : 'password';
-            regEyeBtn.textContent = isPass ? 'Hide' : 'Show';
+            regEyeBtn.textContent = isPass ? 'Hide' : 'View';
         });
     </script>
 </body>
