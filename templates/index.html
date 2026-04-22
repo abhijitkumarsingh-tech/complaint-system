@@ -2,94 +2,186 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Campus Student Portal</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <title>Student Dashboard | Campus Support</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background-color: #f8f9fa; margin: 0; padding: 20px; }
-        .container { max-width: 900px; margin: auto; }
-        .header { background: #003366; color: white; padding: 20px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-bottom: 25px; }
-        .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.05); margin-bottom: 20px; border: 1px solid #e1e4e8; }
-        label { font-weight: 600; font-size: 13px; color: #555; text-transform: uppercase; margin-bottom: 8px; display: block;}
-        input, select, textarea { width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 6px; margin-bottom: 20px; box-sizing: border-box; }
-        button { background: #0056b3; color: white; padding: 14px; border: none; border-radius: 6px; font-weight: bold; width: 100%; cursor: pointer; transition: 0.3s; }
-        button:hover { background: #003d82; }
-        .progress-container { background: #eee; border-radius: 10px; height: 10px; margin: 10px 0; overflow: hidden; }
-        .progress-bar { height: 100%; background: #28a745; transition: width 0.5s; }
-        .time-tag { font-size: 12px; color: #888; font-style: italic; }
-        .status-badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; color: white; float: right; text-transform: uppercase;}
-        .msg { padding: 15px; margin-bottom: 20px; border-radius: 6px; font-weight: bold; font-size: 14px; text-align: center;}
-        .msg.success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-        .msg.error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .dark-label { color: #000000 !important; font-weight: 900; text-transform: uppercase; font-size: 11px; letter-spacing: 0.1em; }
+        .input-focus { transition: all 0.3s ease; border: 2px solid #000000; }
+        .input-focus:focus { border-color: #4f46e5; box-shadow: 5px 5px 0px 0px rgba(0,0,0,1); }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #000000; border-radius: 10px; }
     </style>
 </head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h2 style="margin: 0;">Campus Complaint Portal</h2>
-            <a href="/logout" style="color:white; text-decoration:none; font-weight:bold;">Logout</a>
-        </div>
+<body class="bg-[#f8fafc] text-[#1e293b] overflow-x-hidden">
 
-        {% with messages = get_flashed_messages(with_categories=true) %}
-          {% if messages %}{% for category, message in messages %}<div class="msg {{ category }}">{{ message }}</div>{% endfor %}{% endif %}
-        {% endwith %}
-
-        <div class="card">
-            <h3 style="margin-top:0; color:#003366;">Submit New Complaint</h3>
-            <form action="/add_complaint" method="POST" enctype="multipart/form-data">
-                <div style="display: flex; gap: 20px;">
-                    <div style="flex: 1;"><label>Full Name</label><input type="text" name="name" placeholder="Full Name" required></div>
-                    <div style="flex: 1;">
-                        <label>Roll Number (YYYY/BRANCH/NO)</label>
-                        <input type="text" name="roll_no" placeholder="e.g. 2023/CSE/37" pattern="[0-9]{4}/[A-Za-z]{2,5}/[0-9]{1,4}" title="Format: 2023/CSE/37" required>
-                    </div>
+    <nav class="sticky top-0 z-50 bg-white border-b-4 border-black px-6 py-4 shadow-sm">
+        <div class="w-full flex justify-between items-center px-4">
+            <h1 class="text-2xl font-black tracking-tighter text-slate-900 italic">CAMPUS<span class="text-indigo-600">SUPPORT</span></h1>
+            <div class="flex items-center gap-8">
+                <div class="text-right">
+                    <p class="text-[10px] font-black text-emerald-600 uppercase tracking-widest leading-none mb-1">Authorized Student</p>
+                    <p class="text-sm font-black text-black uppercase">{{ session.full_name or session.username }}</p>
                 </div>
-
-                <div style="display: flex; gap: 20px;">
-                    <div style="flex: 1;"><label>Your Email</label><input type="email" name="email" placeholder="example@gmail.com" required></div>
-                    <div style="flex: 1;"><label>Phone Number</label><input type="text" name="phone" pattern="[0-9]{10}" placeholder="10 Digit Number" required></div>
-                </div>
-
-                <div style="display: flex; gap: 20px;">
-                    <div style="flex: 1;"><label>Category</label>
-                        <select name="category">
-                            <option value="IT & Wi-Fi">IT & Wi-Fi</option>
-                            <option value="Hostel">Hostel</option>
-                            <option value="Academics">Academics</option>
-                            <option value="Other">Other</option>
-                        </select>
-                    </div>
-                    <div style="flex: 1;"><label>Priority</label>
-                        <select name="priority">
-                            <option value="Low">Low</option>
-                            <option value="Medium" selected>Medium</option>
-                            <option value="High">High (Urgent)</option>
-                        </select>
-                    </div>
-                </div>
-
-                <label>Complaint Details</label>
-                <textarea name="complaint" rows="3" placeholder="Explain your problem..." required></textarea>
-                
-                <label>Attach Photo (Optional)</label>
-                <input type="file" name="photo" accept="image/*">
-                
-                <button type="submit">Submit Complaint</button>
-            </form>
-        </div>
-
-        <h3>Your History</h3>
-        {% for comp in complaints %}
-        <div class="card" style="padding: 20px;">
-            <span class="status-badge" style="background: {% if comp.status == 'Solved' %}#28a745{% elif comp.status == 'In Processing' %}#17a2b8{% else %}#f0ad4e{% endif %};">{{ comp.status }}</span>
-            <strong>ID #{{ comp.id }} | {{ comp.category }} | Priority: {{ comp.priority }}</strong>
-            <p style="margin: 10px 0;">{{ comp.text }}</p>
-            <div class="progress-container">
-                <div class="progress-bar" style="width: {{ comp.progress }}%;"></div>
+                <a href="/logout" class="bg-rose-50 text-rose-600 px-6 py-2.5 rounded-xl font-black text-[11px] uppercase border-2 border-rose-600 hover:bg-rose-600 hover:text-white transition-all">LOGOUT</a>
             </div>
-            <span class="time-tag">Submitted {{ comp.created_at|time_ago }}</span>
         </div>
-        {% else %}
-        <p style="text-align: center; color: #888;">No history found.</p>
-        {% endfor %}
-    </div>
+    </nav>
+
+    <main class="w-full p-6 grid grid-cols-1 xl:grid-cols-12 gap-8">
+        
+        <div class="xl:col-span-7 order-1">
+            <div class="bg-white rounded-3xl shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] border-2 border-black p-8 lg:p-12">
+                <div class="mb-10 text-left border-b-2 border-slate-100 pb-8">
+                    <h3 class="text-3xl font-black text-black italic uppercase tracking-tighter">Submit Official Grievance</h3>
+                    <p class="text-black font-bold text-sm mt-2 uppercase tracking-wide">Enter the details of your issue for formal resolution by the campus administration.</p>
+                </div>
+
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                  {% if messages %}{% for cat, msg in messages %}
+                    <div class="mb-8 p-5 rounded-2xl {% if cat == 'error' %}bg-rose-600{% else %}bg-emerald-600{% endif %} text-white text-xs font-black uppercase text-center shadow-lg">
+                        {{ msg }}
+                    </div>
+                  {% endfor %}{% endif %}
+                {% endwith %}
+
+                <form action="/add_complaint" method="POST" enctype="multipart/form-data" class="space-y-8">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div class="space-y-3">
+                            <label class="dark-label ml-1">Full Identity Name</label>
+                            <input type="text" name="name" value="{{ session.full_name or session.username }}" class="w-full p-5 bg-slate-100 rounded-2xl text-black font-black text-sm outline-none border-2 border-black uppercase" readonly>
+                        </div>
+                        <div class="space-y-3">
+                            <label class="dark-label ml-1">Official Roll Number</label>
+                            <input type="text" name="roll_no" placeholder="E.G. 2023/POL/001" class="w-full p-5 bg-white rounded-2xl text-sm font-black outline-none input-focus uppercase" required>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div class="space-y-3">
+                            <label class="dark-label ml-1">Registered Email Address</label>
+                            <input type="email" name="email" value="{{ user_email }}" readonly class="w-full p-5 bg-slate-100 border-2 border-black rounded-2xl text-black font-black text-sm outline-none cursor-not-allowed">
+                        </div>
+                        <div class="space-y-3">
+                            <label class="dark-label ml-1">Contact Phone Number</label>
+                            <input type="text" name="phone" placeholder="ENTER 10 DIGIT MOBILE NUMBER" class="w-full p-5 bg-white rounded-2xl text-sm font-black outline-none input-focus" required>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div class="space-y-3">
+                            <label class="dark-label ml-1">Report Category</label>
+                            <select name="category" id="catSelect" onchange="updateTips(this.value)" class="w-full p-5 bg-white rounded-2xl text-sm font-black outline-none input-focus cursor-pointer uppercase">
+                                <option value="IT & Wi-Fi">IT and Wi-Fi Infrastructure</option>
+                                <option value="Hostel">Hostel Maintenance</option>
+                                <option value="Academics">Academic Department</option>
+                                <option value="Other">Miscellaneous Issues</option>
+                            </select>
+                        </div>
+                        <div class="space-y-3">
+                            <label class="dark-label ml-1">Priority Level</label>
+                            <select name="priority" class="w-full p-5 bg-white rounded-2xl text-sm font-black outline-none input-focus uppercase tracking-widest">
+                                <option value="Low" class="text-slate-900 font-bold">Standard</option>
+                                <option value="Medium" selected class="text-amber-600 font-bold">Urgent</option>
+                                <option value="High" class="text-rose-600 font-bold">Critical</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center px-1">
+                            <label class="dark-label">Comprehensive Issue Description</label>
+                            <span id="charCount" class="text-[10px] font-black text-black uppercase tracking-tighter">0 / 500 CHARACTERS</span>
+                        </div>
+                        <textarea name="complaint" id="complaintBox" maxlength="500" rows="5" oninput="countChars(this)" class="w-full p-6 bg-white rounded-3xl text-sm font-black text-black outline-none resize-none input-focus" required placeholder="Provide a detailed description of your concern..."></textarea>
+                    </div>
+                    
+                    <div class="space-y-3">
+                        <label class="dark-label ml-1">Evidence Attachment (Mandatory)</label>
+                        <div class="relative group">
+                            <input type="file" name="photo" id="photoInput" accept="image/*" onchange="previewFile()" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" required>
+                            <div id="uploadBox" class="w-full p-10 border-4 border-dashed border-black rounded-3xl text-center group-hover:bg-slate-50 transition-all bg-white">
+                                <p id="uploadText" class="text-xs font-black text-black uppercase tracking-[0.2em] italic">Select evidence documentation for upload</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="w-full py-6 bg-black text-white font-black rounded-2xl hover:bg-indigo-700 transition-all shadow-[8px_8px_0px_0px_rgba(79,70,229,1)] active:translate-y-1 active:shadow-none uppercase tracking-[0.3em] text-sm">Finalize Submission</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="xl:col-span-5 space-y-8 order-2">
+            <h3 class="text-xl font-black text-black uppercase tracking-tighter ml-2 italic">Submission History</h3>
+            
+            <div class="space-y-6 max-h-[1200px] overflow-y-auto pr-4 custom-scrollbar">
+                {% for comp in complaints %}
+                <div class="bg-white p-8 rounded-3xl border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] space-y-6 hover:translate-x-2 transition-transform">
+                    <div class="flex justify-between items-center">
+                        <span class="text-[10px] font-black bg-black text-white px-4 py-1.5 rounded-lg uppercase tracking-widest">{{ comp.category }}</span>
+                        <span class="text-[10px] font-black uppercase {% if comp.status == 'Solved' %} text-emerald-600 {% else %} text-amber-600 {% endif %} tracking-widest border-b-2 {% if comp.status == 'Solved' %} border-emerald-400 {% else %} border-amber-400 {% endif %}">
+                            STATUS: {{ comp.status }}
+                        </span>
+                    </div>
+                    
+                    <div class="flex justify-between items-center">
+                        <h4 class="text-sm font-black text-black uppercase tracking-tighter">Case Reference #{{ comp.id }}</h4>
+                        <p class="text-[10px] font-black text-slate-500 uppercase">{{ comp.created_at|time_ago }}</p>
+                    </div>
+                    
+                    <div class="w-full bg-slate-100 h-4 rounded-full overflow-hidden border-2 border-black">
+                        <div class="h-full transition-all duration-1000 {% if comp.status == 'Solved' %} bg-emerald-500 {% else %} bg-indigo-600 {% endif %}" 
+                             style="width: {% if comp.status == 'Pending' %}30{% elif comp.status == 'In Processing' %}65{% else %}100{% endif %}%">
+                        </div>
+                    </div>
+
+                    {% if comp.admin_remark %}
+                    <div class="p-4 bg-slate-50 rounded-2xl border-l-[10px] border-black border-2 border-slate-200">
+                        <p class="text-[10px] font-black text-emerald-600 uppercase mb-2 tracking-widest">Administrative Response:</p>
+                        <p class="text-xs font-black text-black leading-relaxed italic">"{{ comp.admin_remark }}"</p>
+                    </div>
+                    {% endif %}
+                </div>
+                {% else %}
+                <div class="text-center py-24 bg-white rounded-[3rem] border-4 border-dashed border-slate-300 shadow-inner">
+                    <p class="text-xs font-black text-slate-400 uppercase tracking-[0.5em]">No history found</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const tips = {
+            'IT & Wi-Fi': 'Provide the specific block and floor number.',
+            'Hostel': 'Include the wing and room number clearly.',
+            'Academics': 'State the relevant department or subject name.',
+            'Other': 'Describe the location and nature of the issue.'
+        };
+        
+        function updateTips(val) {
+            document.getElementById('complaintBox').placeholder = tips[val] || "Describe your concern in detail...";
+        }
+
+        function countChars(obj) {
+            document.getElementById('charCount').innerHTML = obj.value.length + " / 500 CHARACTERS";
+        }
+
+        function previewFile() {
+            const file = document.getElementById('photoInput').files[0];
+            const text = document.getElementById('uploadText');
+            const box = document.getElementById('uploadBox');
+            if (file) {
+                text.innerText = "SELECTED: " + file.name.toUpperCase();
+                text.classList.add('text-emerald-600');
+                box.classList.replace('border-black', 'border-emerald-500');
+                box.classList.add('bg-emerald-50');
+            }
+        }
+
+        window.onload = () => updateTips(document.getElementById('catSelect').value);
+    </script>
 </body>
 </html>
