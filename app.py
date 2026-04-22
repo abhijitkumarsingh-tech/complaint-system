@@ -79,7 +79,6 @@ def login():
         user = User.query.filter_by(username=u, password=p).first()
         
         if user:
-            # 1. Admin mode check
             if user.is_admin:
                 if login_mode == 'admin_hq':
                     session.permanent = True
@@ -89,24 +88,58 @@ def login():
                     flash("Admin account detected. Use Administrative Portal.", "error")
                     return redirect(url_for('login'))
             
-            # 2. Student Approval Check (Most Important Fix)
             if not user.is_approved:
                 flash("Access Pending. Account awaiting administrative approval.", "warning")
                 return redirect(url_for('login'))
 
-            # 3. Successful Student Login
             session.permanent = True
             session.update({
                 'user_id': user.id, 
                 'username': user.username, 
                 'is_admin': False,
-                'user_email': user.email,
+                'user_email': user.email if user.email else "No Email",
                 'full_name': user.full_name
             })
             return redirect(url_for('dashboard'))
         
         flash("Invalid Credentials.", "error")
     return render_template('login.html')
+
+@app.route('/dashboard')
+def dashboard():
+    if 'user_id' not in session or session.get('is_admin'):
+        return redirect(url_for('login'))
+    
+    # User ki complaints fetch karna (Yahi missing tha)
+    comps = Complaint.query.filter_by(user_id=session['user_id']).order_by(Complaint.created_at.desc()).all()
+    return render_template('index.html', complaints=comps, user_email=session.get('user_email'))
+
+@app.route('/add_complaint', methods=['POST'])
+def add_complaint():
+    if 'user_id' not in session: return redirect(url_for('login'))
+    file = request.files.get('photo')
+    if not file or file.filename == '':
+        flash("Evidence photo is required.", "error")
+        return redirect(url_for('dashboard'))
+    
+    fname = secure_filename(file.filename)
+    file.save(os.path.join(app.config['UPLOAD_FOLDER'], fname))
+    
+    new_c = Complaint(
+        user_id=session['user_id'], 
+        name=request.form.get('name'), 
+        roll_no=request.form.get('roll_no', '').upper(),
+        email=session.get('user_email', 'N/A'), 
+        phone=request.form.get('phone'),
+        category=request.form.get('category'), 
+        priority=request.form.get('priority'),
+        text=request.form.get('complaint'), 
+        image_file=fname
+    )
+    db.session.add(new_c)
+    db.session.commit()
+    flash("Report filed successfully.", "success")
+    return redirect(url_for('dashboard'))
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -151,21 +184,21 @@ def approve_user(user_id):
         db.session.commit()
         flash(f"Access granted to {user.username}.", "success")
     return redirect(url_for('admin_panel'))
+
 @app.route('/add_new_admin', methods=['POST'])
 def add_new_admin():
     if not session.get('is_admin'): return redirect(url_for('login'))
     fn = request.form.get('admin_full_name')
     u = request.form.get('admin_username')
     p = request.form.get('admin_password')
-    
     try:
         new_admin = User(username=u, password=p, full_name=fn, is_admin=True, is_approved=True)
-        db.session.add(new_admin)
-        db.session.commit()
+        db.session.add(new_admin); db.session.commit()
         flash(f"Administrator {u} authorized successfully.", "success")
     except:
         flash("Username already exists.", "error")
     return redirect(url_for('admin_panel'))
+
 @app.route('/reset_database')
 def reset_database():
     db.drop_all(); db.create_all()
@@ -182,5 +215,4 @@ def uploaded_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
 if __name__ == '__main__':
-    # Auto-Reset Logic Hata di gayi hai taaki data save rahe
     app.run(debug=True)
