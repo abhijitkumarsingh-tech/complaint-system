@@ -1,179 +1,126 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash, send_from_directory, make_response
-from flask_sqlalchemy import SQLAlchemy
-from werkzeug.utils import secure_filename
-import os, smtplib, threading, csv
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-from io import StringIO
-from datetime import datetime, timedelta, timezone
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <title>Administration HQ | Campus Support</title>
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; }
+        .admin-card { 
+            background: white; 
+            border: 2px solid #000; 
+            border-radius: 2rem; 
+            box-shadow: 8px 8px 0px #000;
+        }
+        th { background: #000 !important; color: #fff !important; font-size: 11px !important; text-transform: uppercase; letter-spacing: 0.1em; padding: 15px !important; }
+    </style>
+</head>
+<body class="flex flex-col lg:flex-row min-h-screen">
 
-app = Flask(__name__)
-app.secret_key = 'abhijit_super_secret_master_key'
-app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
+    <aside class="w-full lg:w-72 bg-[#0f172a] text-white p-8 flex flex-col">
+        <h1 class="text-2xl font-black italic tracking-tighter mb-10 border-b border-white/10 pb-4">ADMIN<span class="text-sky-400">HQ</span></h1>
+        <nav class="space-y-4 flex-1">
+            <a href="/admin" class="block bg-white/10 p-4 rounded-xl font-bold text-xs uppercase tracking-widest">Dashboard</a>
+            <div class="pt-10">
+                <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4">Account</p>
+                <a href="/logout" class="block border-2 border-rose-500/50 text-rose-400 p-4 rounded-xl font-black text-xs text-center hover:bg-rose-500 hover:text-white transition-all">LOGOUT</a>
+            </div>
+        </nav>
+    </aside>
 
-# --- CONFIGURATION ---
-ADMIN_EMAIL_DEFAULT = "abhijitkumarsingh74@gmail.com"  
-EMAIL_PASSWORD = "duoj jfam rucl nute"          
-UPLOAD_FOLDER = 'uploads'
-SECRET_REGISTRATION_CODE = "145GPWC" 
+    <main class="flex-1 p-6 lg:p-10 overflow-x-hidden">
+        <header class="mb-10 flex justify-between items-center bg-white p-6 rounded-3xl border-2 border-black shadow-[5px_5px_0px_#000]">
+            <h2 class="text-xl font-black uppercase italic tracking-tighter border-l-4 border-black pl-4">Administrative Control Center</h2>
+            <p class="text-sm font-black text-black uppercase">Master: {{ session.username }}</p>
+        </header>
 
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-if not os.path.exists(UPLOAD_FOLDER):
-    os.makedirs(UPLOAD_FOLDER)
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+            <div class="admin-card p-6 border-l-[12px] border-l-indigo-600">
+                <p class="text-[10px] font-black text-slate-400 uppercase">Total Reports</p>
+                <h3 class="text-3xl font-black text-black">{{ stats.total }}</h3>
+            </div>
+            <div class="admin-card p-6 border-l-[12px] border-l-amber-400">
+                <p class="text-[10px] font-black text-slate-400 uppercase">Pending Investigations</p>
+                <h3 class="text-3xl font-black text-black">{{ stats.pending }}</h3>
+            </div>
+            <div class="admin-card p-6 border-l-[12px] border-l-emerald-500">
+                <p class="text-[10px] font-black text-slate-400 uppercase">Resolved Cases</p>
+                <h3 class="text-3xl font-black text-black">{{ stats.solved }}</h3>
+            </div>
+            <div class="admin-card p-6 bg-indigo-600 border-none shadow-[8px_8px_0px_#000]">
+                <p class="text-[10px] font-black text-white/70 uppercase">Pending Approvals</p>
+                <h3 class="text-3xl font-black text-white">{{ stats.pending_users }}</h3>
+            </div>
+        </div>
 
-# Database Connection (TiDB Cloud / MySQL)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://3AAj8oncwkM1Vqv.root:g9N0PtQJp9QVlVka@gateway01.ap-southeast-1.prod.aws.tidbcloud.com:4000/test?ssl_verify_cert=true&ssl_verify_identity=true'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-db = SQLAlchemy(app)
+        {% if pending_users %}
+        <section class="mb-12">
+            <h3 class="text-lg font-black text-black uppercase italic mb-6">Pending Access Requests</h3>
+            <div class="admin-card overflow-hidden">
+                <table class="w-full text-left">
+                    <thead>
+                        <tr>
+                            <th>Student Name</th>
+                            <th>Username</th>
+                            <th>Contact</th>
+                            <th class="text-center">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        {% for user in pending_users %}
+                        <tr class="hover:bg-slate-50">
+                            <td class="p-5 font-bold text-sm uppercase">{{ user.full_name or 'N/A' }}</td>
+                            <td class="p-5 text-sm font-black text-indigo-600 italic">{{ user.username }}</td>
+                            <td class="p-5 text-xs font-bold">{{ user.email }}<br>{{ user.phone }}</td>
+                            <td class="p-5 text-center">
+                                <a href="/approve_user/{{ user.id }}" class="bg-emerald-500 text-white px-6 py-2 rounded-xl font-black text-[10px] uppercase hover:bg-black transition-all">Approve Access</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+        {% endif %}
 
-# --- MODELS ---
-class User(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(50), unique=True, nullable=False)
-    password = db.Column(db.String(50), nullable=False)
-    email = db.Column(db.String(120), nullable=True) 
-    phone = db.Column(db.String(20), nullable=True)  
-    full_name = db.Column(db.String(100), default="User")
-    is_admin = db.Column(db.Boolean, default=False)
-    is_approved = db.Column(db.Boolean, default=False)
-
-class Complaint(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    name = db.Column(db.String(100), nullable=False)
-    roll_no = db.Column(db.String(50), nullable=False)
-    email = db.Column(db.String(120), nullable=False)
-    phone = db.Column(db.String(20), nullable=False)
-    category = db.Column(db.String(50), nullable=False)
-    priority = db.Column(db.String(20), default='Medium')
-    text = db.Column(db.Text, nullable=False)
-    image_file = db.Column(db.String(200), nullable=False)
-    status = db.Column(db.String(20), default='Pending')
-    admin_remark = db.Column(db.Text, nullable=True)
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
-
-# --- HELPERS ---
-@app.template_filter('time_ago')
-def time_ago_filter(dt):
-    if not dt: return ""
-    if dt.tzinfo is None: dt = dt.replace(tzinfo=timezone.utc)
-    diff = datetime.now(timezone.utc) - dt
-    if diff.days > 0: return f"{diff.days} days ago"
-    hours = diff.seconds // 3600
-    if hours > 0: return f"{hours}h ago"
-    return f"{diff.seconds // 60}m ago"
-
-# --- ROUTES ---
-@app.route('/')
-def index():
-    if 'user_id' in session:
-        return redirect(url_for('admin_panel' if session.get('is_admin') else 'dashboard'))
-    return redirect(url_for('login'))
-
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    if request.method == 'POST':
-        u = request.form.get('username')
-        p = request.form.get('password')
-        login_mode = request.form.get('login_mode')
-
-        user = User.query.filter_by(username=u, password=p).first()
-        
-        if user:
-            # 1. Admin Verification
-            if user.is_admin:
-                if login_mode == 'admin_hq':
-                    session.permanent = True
-                    session.update({'user_id': user.id, 'username': user.username, 'is_admin': True, 'full_name': user.full_name})
-                    return redirect(url_for('admin_panel'))
-                else:
-                    flash("Administrative credentials detected. Please use Admin Portal.", "error")
-                    return redirect(url_for('login'))
-            
-            # 2. Student Approval Check
-            if not user.is_approved:
-                flash("Access Pending. Your account is awaiting administrative approval.", "warning")
-                return redirect(url_for('login'))
-
-            # 3. Success Login
-            session.permanent = True
-            session.update({
-                'user_id': user.id, 
-                'username': user.username, 
-                'is_admin': False,
-                'user_email': user.email,
-                'full_name': user.full_name
-            })
-            return redirect(url_for('dashboard'))
-        
-        flash("Invalid identification credentials provided.", "error")
-    return render_template('login.html')
-
-@app.route('/register', methods=['GET', 'POST'])
-def register():
-    if request.method == 'POST':
-        u, p, e = request.form.get('username'), request.form.get('password'), request.form.get('email')
-        ph, fn = request.form.get('phone'), request.form.get('full_name', 'Student')
-        code = request.form.get('secret_code')
-
-        if code != SECRET_REGISTRATION_CODE:
-            flash("Invalid Authorization Code.", "error")
-            return redirect(url_for('register'))
-
-        try:
-            new_user = User(username=u, password=p, email=e, phone=ph, full_name=fn, is_admin=False, is_approved=False)
-            db.session.add(new_user); db.session.commit()
-            flash("Registered! Please wait for Admin approval.", "success")
-            return redirect(url_for('login'))
-        except:
-            flash("Username already exists.", "error")
-    return render_template('register.html')
-
-@app.route('/admin')
-def admin_panel():
-    if not session.get('is_admin'): return redirect(url_for('login'))
-    stats = {
-        'total': Complaint.query.count(),
-        'pending': Complaint.query.filter_by(status='Pending').count(),
-        'solved': Complaint.query.filter_by(status='Solved').count(),
-        'pending_users': User.query.filter_by(is_approved=False, is_admin=False).count()
-    }
-    all_comps = Complaint.query.order_by(Complaint.created_at.desc()).all()
-    all_admins = User.query.filter_by(is_admin=True).all()
-    pending_users = User.query.filter_by(is_approved=False, is_admin=False).all()
-    return render_template('admin.html', complaints=all_comps, stats=stats, admins=all_admins, pending_users=pending_users)
-
-@app.route('/approve_user/<int:user_id>')
-def approve_user(user_id):
-    if not session.get('is_admin'): return redirect(url_for('login'))
-    user = User.query.get(user_id)
-    if user:
-        user.is_approved = True
-        db.session.commit()
-        flash(f"Access granted to {user.username}.", "success")
-    return redirect(url_for('admin_panel'))
-
-@app.route('/reset_database')
-def reset_database():
-    db.drop_all(); db.create_all()
-    admin = User(username='admin', password='adminpassword', full_name="ABHIJIT KUMAR SINGH", is_admin=True, is_approved=True)
-    db.session.add(admin); db.session.commit()
-    return "System Reset Successful. Login: admin / adminpassword"
-
-@app.route('/dashboard')
-def dashboard():
-    if 'user_id' not in session or session.get('is_admin'): return redirect(url_for('login'))
-    comps = Complaint.query.filter_by(user_id=session['user_id']).order_by(Complaint.created_at.desc()).all()
-    return render_template('index.html', complaints=comps)
-
-@app.route('/logout')
-def logout():
-    session.clear()
-    return redirect(url_for('login'))
-
-@app.route('/uploads/<filename>')
-def uploaded_file(filename):
-    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
-
-if __name__ == '__main__':
-    app.run(debug=True)
+        <section>
+            <h3 class="text-lg font-black text-black uppercase italic mb-6">Incident Tracking Logs</h3>
+            <div class="admin-card overflow-hidden">
+                <table class="w-full text-left">
+                    <thead>
+                        <tr>
+                            <th>Case ID</th>
+                            <th>Student</th>
+                            <th>Complaint Details</th>
+                            <th>Status & Remark</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        {% for comp in complaints %}
+                        <tr class="hover:bg-slate-50">
+                            <td class="p-5 align-top font-black text-xs">#{{ comp.id }}</td>
+                            <td class="p-5 align-top">
+                                <p class="text-xs font-black uppercase">{{ comp.name }}</p>
+                                <p class="text-[10px] text-indigo-600 font-bold">{{ comp.roll_no }}</p>
+                            </td>
+                            <td class="p-5 align-top">
+                                <p class="text-xs font-bold italic mb-2">"{{ comp.text }}"</p>
+                                <span class="bg-black text-white text-[9px] px-2 py-1 rounded font-black uppercase">{{ comp.category }}</span>
+                            </td>
+                            <td class="p-5 align-top">
+                                <form action="/update_status/{{ comp.id }}" method="POST" class="flex flex-col gap-2">
+                                    <input name="remark" class="border-2 border-slate-200 p-2 rounded-lg text-[10px] font-bold outline-none focus:border-black" placeholder="Add remark..." value="{{ comp.admin_remark or '' }}">
+                                    <button class="bg-indigo-600 text-white p-2 rounded-lg text-[9px] font-black uppercase hover:bg-black transition-all">Update Status</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+</body>
+</html>
