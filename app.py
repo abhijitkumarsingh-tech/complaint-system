@@ -1,9 +1,8 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash, send_from_directory
+from flask import Flask, render_template, request, redirect, url_for, session, flash, send_from_directory, make_response
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.utils import secure_filename
-import os, smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
+import os, csv
+from io import StringIO
 from datetime import datetime, timedelta, timezone
 
 app = Flask(__name__)
@@ -12,7 +11,6 @@ app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
 
 # --- CONFIGURATION ---
 ADMIN_EMAIL_DEFAULT = "abhijitkumarsingh74@gmail.com"  
-EMAIL_PASSWORD = "duoj jfam rucl nute"          
 UPLOAD_FOLDER = 'uploads'
 SECRET_REGISTRATION_CODE = "145GPWC" 
 
@@ -20,7 +18,7 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 
-# Database Connection (TiDB Cloud)
+# Database Connection
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://3AAj8oncwkM1Vqv.root:g9N0PtQJp9QVlVka@gateway01.ap-southeast-1.prod.aws.tidbcloud.com:4000/test?ssl_verify_cert=true&ssl_verify_identity=true'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
@@ -59,8 +57,7 @@ def time_ago_filter(dt):
     diff = datetime.now(timezone.utc) - dt
     if diff.days > 0: return f"{diff.days} days ago"
     hours = diff.seconds // 3600
-    if hours > 0: return f"{hours}h ago"
-    return f"{diff.seconds // 60}m ago"
+    return f"{hours}h ago" if hours > 0 else f"{diff.seconds // 60}m ago"
 
 # --- ROUTES ---
 @app.route('/')
@@ -75,9 +72,7 @@ def login():
         u = request.form.get('username')
         p = request.form.get('password')
         login_mode = request.form.get('login_mode')
-
         user = User.query.filter_by(username=u, password=p).first()
-        
         if user:
             if user.is_admin:
                 if login_mode == 'admin_hq':
@@ -87,30 +82,18 @@ def login():
                 else:
                     flash("Admin account detected. Use Administrative Portal.", "error")
                     return redirect(url_for('login'))
-            
             if not user.is_approved:
-                flash("Access Pending. Account awaiting administrative approval.", "warning")
+                flash("Access Pending. Account awaiting approval.", "warning")
                 return redirect(url_for('login'))
-
             session.permanent = True
-            session.update({
-                'user_id': user.id, 
-                'username': user.username, 
-                'is_admin': False,
-                'user_email': user.email if user.email else "No Email",
-                'full_name': user.full_name
-            })
+            session.update({'user_id': user.id, 'username': user.username, 'is_admin': False, 'user_email': user.email, 'full_name': user.full_name})
             return redirect(url_for('dashboard'))
-        
         flash("Invalid Credentials.", "error")
     return render_template('login.html')
 
 @app.route('/dashboard')
 def dashboard():
-    if 'user_id' not in session or session.get('is_admin'):
-        return redirect(url_for('login'))
-    
-    # User ki complaints fetch karna (Yahi missing tha)
+    if 'user_id' not in session or session.get('is_admin'): return redirect(url_for('login'))
     comps = Complaint.query.filter_by(user_id=session['user_id']).order_by(Complaint.created_at.desc()).all()
     return render_template('index.html', complaints=comps, user_email=session.get('user_email'))
 
@@ -121,46 +104,19 @@ def add_complaint():
     if not file or file.filename == '':
         flash("Evidence photo is required.", "error")
         return redirect(url_for('dashboard'))
-    
     fname = secure_filename(file.filename)
     file.save(os.path.join(app.config['UPLOAD_FOLDER'], fname))
-    
     new_c = Complaint(
-        user_id=session['user_id'], 
-        name=request.form.get('name'), 
-        roll_no=request.form.get('roll_no', '').upper(),
-        email=session.get('user_email', 'N/A'), 
-        phone=request.form.get('phone'),
-        category=request.form.get('category'), 
-        priority=request.form.get('priority'),
-        text=request.form.get('complaint'), 
-        image_file=fname
+        user_id=session['user_id'], name=request.form.get('name'), 
+        roll_no=request.form.get('roll_no', '').upper(), email=session.get('user_email', 'N/A'), 
+        phone=request.form.get('phone'), category=request.form.get('category'), 
+        priority=request.form.get('priority'), text=request.form.get('complaint'), image_file=fname
     )
-    db.session.add(new_c)
-    db.session.commit()
+    db.session.add(new_c); db.session.commit()
     flash("Report filed successfully.", "success")
     return redirect(url_for('dashboard'))
 
-@app.route('/register', methods=['GET', 'POST'])
-def register():
-    if request.method == 'POST':
-        u, p, e = request.form.get('username'), request.form.get('password'), request.form.get('email')
-        ph, fn = request.form.get('phone'), request.form.get('full_name', 'Student')
-        code = request.form.get('secret_code')
-
-        if code != SECRET_REGISTRATION_CODE:
-            flash("Invalid Authorization Code.", "error")
-            return redirect(url_for('register'))
-
-        try:
-            new_user = User(username=u, password=p, email=e, phone=ph, full_name=fn, is_admin=False, is_approved=False)
-            db.session.add(new_user); db.session.commit()
-            flash("Registration successful. Wait for Admin approval.", "success")
-            return redirect(url_for('login'))
-        except Exception: 
-            flash("Username already exists.", "error")
-    return render_template('register.html')
-
+# --- ADMIN ACTIONS ---
 @app.route('/admin')
 def admin_panel():
     if not session.get('is_admin'): return redirect(url_for('login'))
@@ -175,6 +131,41 @@ def admin_panel():
     pending_users = User.query.filter_by(is_approved=False, is_admin=False).all()
     return render_template('admin.html', complaints=all_comps, stats=stats, admins=all_admins, pending_users=pending_users)
 
+@app.route('/update_status/<int:id>', methods=['POST'])
+def update_status(id):
+    if not session.get('is_admin'): return redirect(url_for('login'))
+    comp = Complaint.query.get(id)
+    if comp:
+        comp.admin_remark = request.form.get('remark')
+        if comp.status == 'Pending': comp.status = 'In Processing'
+        elif comp.status == 'In Processing': comp.status = 'Solved'
+        db.session.commit()
+        flash("Status updated successfully.", "success")
+    return redirect(url_for('admin_panel'))
+
+@app.route('/delete_complaint/<int:id>', methods=['POST'])
+def delete_complaint(id):
+    if not session.get('is_admin'): return redirect(url_for('login'))
+    comp = Complaint.query.get(id)
+    if comp:
+        db.session.delete(comp); db.session.commit()
+        flash("Record purged successfully.", "success")
+    return redirect(url_for('admin_panel'))
+
+@app.route('/export_csv')
+def export_csv():
+    if not session.get('is_admin'): return redirect(url_for('login'))
+    comps = Complaint.query.all()
+    si = StringIO()
+    cw = csv.writer(si)
+    cw.writerow(['ID', 'Name', 'Roll No', 'Category', 'Status', 'Date'])
+    for c in comps:
+        cw.writerow([c.id, c.name, c.roll_no, c.category, c.status, c.created_at])
+    output = make_response(si.getvalue())
+    output.headers["Content-Disposition"] = "attachment; filename=logs.csv"
+    output.headers["Content-type"] = "text/csv"
+    return output
+
 @app.route('/approve_user/<int:user_id>')
 def approve_user(user_id):
     if not session.get('is_admin'): return redirect(url_for('login'))
@@ -182,21 +173,14 @@ def approve_user(user_id):
     if user:
         user.is_approved = True
         db.session.commit()
-        flash(f"Access granted to {user.username}.", "success")
     return redirect(url_for('admin_panel'))
 
 @app.route('/add_new_admin', methods=['POST'])
 def add_new_admin():
     if not session.get('is_admin'): return redirect(url_for('login'))
-    fn = request.form.get('admin_full_name')
-    u = request.form.get('admin_username')
-    p = request.form.get('admin_password')
-    try:
-        new_admin = User(username=u, password=p, full_name=fn, is_admin=True, is_approved=True)
-        db.session.add(new_admin); db.session.commit()
-        flash(f"Administrator {u} authorized successfully.", "success")
-    except:
-        flash("Username already exists.", "error")
+    new_admin = User(username=request.form.get('admin_username'), password=request.form.get('admin_password'), 
+                     full_name=request.form.get('admin_full_name'), is_admin=True, is_approved=True)
+    db.session.add(new_admin); db.session.commit()
     return redirect(url_for('admin_panel'))
 
 @app.route('/reset_database')
@@ -204,7 +188,7 @@ def reset_database():
     db.drop_all(); db.create_all()
     admin = User(username='admin', password='adminpassword', full_name="ABHIJIT KUMAR SINGH", is_admin=True, is_approved=True)
     db.session.add(admin); db.session.commit()
-    return "DB Cleaned. Master Admin: admin / adminpassword"
+    return "Database Reset Complete."
 
 @app.route('/logout')
 def logout():
