@@ -57,14 +57,15 @@ def time_ago_filter(dt):
     diff = datetime.now(timezone.utc) - dt
     if diff.days > 0: return f"{diff.days} days ago"
     hours = diff.seconds // 3600
-    return f"{hours}h ago" if hours > 0 else f"{diff.seconds // 60}m ago"
+    if hours > 0: return f"{hours}h ago"
+    return f"{diff.seconds // 60}m ago"
 
 # --- ROUTES ---
 @app.route('/')
 def index():
     if 'user_id' in session:
         return redirect(url_for('admin_panel' if session.get('is_admin') else 'dashboard'))
-    return redirect(url_for('login'))
+    return render_template('login.html')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -91,6 +92,26 @@ def login():
         flash("Invalid Credentials.", "error")
     return render_template('login.html')
 
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        u, p, e = request.form.get('username'), request.form.get('password'), request.form.get('email')
+        ph, fn = request.form.get('phone'), request.form.get('full_name', 'Student')
+        code = request.form.get('secret_code')
+
+        if code != SECRET_REGISTRATION_CODE:
+            flash("Invalid Authorization Code.", "error")
+            return redirect(url_for('register'))
+
+        try:
+            new_user = User(username=u, password=p, email=e, phone=ph, full_name=fn, is_admin=False, is_approved=False)
+            db.session.add(new_user); db.session.commit()
+            flash("Registration successful. Wait for Admin approval.", "success")
+            return redirect(url_for('login'))
+        except Exception: 
+            flash("Username already exists.", "error")
+    return render_template('register.html')
+
 @app.route('/dashboard')
 def dashboard():
     if 'user_id' not in session or session.get('is_admin'): return redirect(url_for('login'))
@@ -116,7 +137,6 @@ def add_complaint():
     flash("Report filed successfully.", "success")
     return redirect(url_for('dashboard'))
 
-# --- ADMIN ACTIONS ---
 @app.route('/admin')
 def admin_panel():
     if not session.get('is_admin'): return redirect(url_for('login'))
