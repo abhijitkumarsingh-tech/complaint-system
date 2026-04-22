@@ -151,13 +151,21 @@ def approve_user(user_id):
         db.session.commit()
         flash(f"Access granted to {user.username}.", "success")
     return redirect(url_for('admin_panel'))
-
-@app.route('/dashboard')
-def dashboard():
-    if 'user_id' not in session or session.get('is_admin'): return redirect(url_for('login'))
-    comps = Complaint.query.filter_by(user_id=session['user_id']).order_by(Complaint.created_at.desc()).all()
-    return render_template('index.html', complaints=comps, user_email=session.get('user_email'))
-
+@app.route('/add_new_admin', methods=['POST'])
+def add_new_admin():
+    if not session.get('is_admin'): return redirect(url_for('login'))
+    fn = request.form.get('admin_full_name')
+    u = request.form.get('admin_username')
+    p = request.form.get('admin_password')
+    
+    try:
+        new_admin = User(username=u, password=p, full_name=fn, is_admin=True, is_approved=True)
+        db.session.add(new_admin)
+        db.session.commit()
+        flash(f"Administrator {u} authorized successfully.", "success")
+    except:
+        flash("Username already exists.", "error")
+    return redirect(url_for('admin_panel'))
 @app.route('/reset_database')
 def reset_database():
     db.drop_all(); db.create_all()
